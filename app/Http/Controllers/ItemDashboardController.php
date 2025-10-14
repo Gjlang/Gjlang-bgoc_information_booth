@@ -7,10 +7,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Exports\ItemsExport;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Validation\Rule;
 
 class ItemDashboardController extends Controller
 {
+    use AuthorizesRequests;
+
     // ---------- Utilities ----------
     /** Convert "undefined" / "" to null for all known filters */
     protected function cleanFilters(Request $request): array
@@ -47,25 +51,81 @@ class ItemDashboardController extends Controller
         return $q;
     }
 
-    // ---------- Pages ----------
-    public function index(Request $request)
-    {
-        // Distincts for filters
-        $distinct = [
-            'type_labels' => Item::whereNotNull('type_label')->distinct()->orderBy('type_label')->pluck('type_label'),
-            'statuses'    => Item::whereNotNull('status')->distinct()->orderBy('status')->pluck('status'),
-            'assign_by'   => Item::whereNotNull('assign_by_id')->distinct()->orderBy('assign_by_id')->pluck('assign_by_id'),
-            'companies'   => Item::whereNotNull('company_id')->distinct()->orderBy('company_id')->pluck('company_id'),
-            'pic_names'   => Item::whereNotNull('pic_name')->distinct()->orderBy('pic_name')->pluck('pic_name'),
-            'products'    => Item::whereNotNull('product_id')->distinct()->orderBy('product_id')->pluck('product_id'),
-        ];
+  public function index(Request $request)
+{
+    // Authorization: anyone logged in can view
+    $this->authorize('viewAny', Item::class);
 
-        return view('dashboard', compact('distinct'));
-    }
+    // Distinct Assign By
+    $assignBy = Item::query()
+        ->select('assign_by_id')
+        ->whereNotNull('assign_by_id')->where('assign_by_id', '!=', '')
+        ->groupBy('assign_by_id')
+        ->orderBy('assign_by_id')
+        ->pluck('assign_by_id');
 
-    // ---------- JSON endpoints ----------
+    // ✅ NEW: Distinct Assign To
+    $assignTo = Item::query()
+        ->select('assign_to_id')
+        ->whereNotNull('assign_to_id')->where('assign_to_id', '!=', '')
+        ->groupBy('assign_to_id')
+        ->orderBy('assign_to_id')
+        ->pluck('assign_to_id');
+
+    // Distinct Internal/Client
+    $typeLabels = Item::query()
+        ->select('type_label')
+        ->whereNotNull('type_label')->where('type_label', '!=', '')
+        ->groupBy('type_label')
+        ->orderBy('type_label')
+        ->pluck('type_label');
+
+    // Distinct Company
+    $companies = Item::query()
+        ->select('company_id')
+        ->whereNotNull('company_id')->where('company_id', '!=', '')
+        ->groupBy('company_id')
+        ->orderBy('company_id')
+        ->pluck('company_id');
+
+    // Distinct PIC
+    $picNames = Item::query()
+        ->select('pic_name')
+        ->whereNotNull('pic_name')->where('pic_name', '!=', '')
+        ->groupBy('pic_name')
+        ->orderBy('pic_name')
+        ->pluck('pic_name');
+
+    // Distinct Product
+    $products = Item::query()
+        ->select('product_id')
+        ->whereNotNull('product_id')->where('product_id', '!=', '')
+        ->groupBy('product_id')
+        ->orderBy('product_id')
+        ->pluck('product_id');
+
+    // Status options
+    $statuses = collect(['Pending', 'In Progress', 'Completed']);
+
+    // Combine everything for the Blade view
+    $distinct = [
+        'assign_by'   => $assignBy,
+        'assign_to'   => $assignTo, // ✅ fixed variable name
+        'type_labels' => $typeLabels,
+        'companies'   => $companies,
+        'pic_names'   => $picNames,
+        'products'    => $products,
+        'statuses'    => $statuses,
+    ];
+
+    return view('dashboard', compact('distinct'));
+}
+
+
     public function list(Request $request)
     {
+        $this->authorize('viewAny', Item::class);
+
         $filters = $this->cleanFilters($request);
 
         try {
@@ -75,14 +135,184 @@ class ItemDashboardController extends Controller
                 ->limit(2000)
                 ->get();
 
-            return response()->json(['ok' => true, 'data' => $items]);
+            $user = $request->user();
+
+            $data = $items->map(function ($i) use ($user) {
+                return [
+                    'id'           => $i->id,
+                    'date_in'      => $i->date_in,
+                    'deadline'     => $i->deadline,
+                    'assign_by_id' => $i->assign_by_id,
+                    'assign_to_id' => $i->assign_to_id,
+                    'type_label'   => $i->type_label,
+                    'company_id'   => $i->company_id,
+                    'pic_name'     => $i->pic_name,
+                    'product_id'   => $i->product_id,
+                    'status'       => $i->status,
+                    'remarks'      => $i->remarks,
+
+                    'can_update'   => $user?->can('update', $i) ?? false,
+                    'can_delete'   => $user?->can('delete', $i) ?? false,
+                ];
+            });
+
+            return response()->json(['ok' => true, 'data' => $data]);
         } catch (\Throwable $e) {
             return response()->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
 
+    public function export(Request $request)
+    {
+        // Authorization: admin only
+        $this->authorize('export', Item::class);
+
+        try {
+            $filters = method_exists($this, 'cleanFilters')
+                ? $this->cleanFilters($request)
+                : $request->only([
+                    'date_in_from','assign_by_id','type_label','company_id',
+                    'pic_name','product_id','status',
+                ]);
+
+            $filename = 'items_export_' . now()->format('Ymd_His') . '.xlsx';
+
+            return Excel::download(new ItemsExport($filters), $filename);
+        } catch (\Throwable $e) {
+            report($e);
+            return response()->json(['ok' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function store(Request $request)
+    {
+        $this->authorize('create', Item::class);
+
+        $data = $request->validate([
+            'date_in'      => 'nullable|date',
+            'deadline'     => 'nullable|date',
+            'assign_by_id' => 'nullable|string|max:255',
+            'assign_to_id' => 'nullable|string|max:255',
+            'type_label'   => 'nullable|string|max:255',
+            'company_id'   => 'nullable|string|max:255',
+            'task'         => 'nullable|string|max:255',
+            'pic_name'     => 'nullable|string|max:255',
+            'product_id'   => 'nullable|string|max:255',
+            'status'       => 'nullable|string|max:255',
+            'remarks'      => 'nullable|string',
+        ]);
+
+        $item = new Item($data);
+        $item->created_by = Auth::id();
+        $item->updated_by = Auth::id();
+        $item->save();
+
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user();
+        return response()->json([
+            'ok'   => true,
+            'data' => array_merge($item->toArray(), [
+                'can_update' => $user?->can('update', $item) ?? false,
+                'can_delete' => $user?->can('delete', $item) ?? false,
+            ]),
+        ]);
+    }
+
+    public function editPayload($id)
+    {
+        $item = Item::findOrFail($id);
+        $this->authorize('update', $item); // <-- blokir non-pemilik
+
+        // Jika ada data tambahan untuk form (dropdown dsb), kirim di sini.
+        return response()->json([
+            'ok'   => true,
+            'data' => $item,
+        ]);
+    }
+
+    public function show($id)
+    {
+        $item = Item::findOrFail($id);
+        $this->authorize('view', $item);
+
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user();
+
+        return response()->json(array_merge($item->toArray(), [
+            'can_update' => $user?->can('update', $item) ?? false,
+            'can_delete' => $user?->can('delete', $item) ?? false,
+            'can_open_edit'=> $user?->can('update', $item) ?? false,
+        ]));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $item = Item::findOrFail($id);
+        $this->authorize('update', $item);
+
+        $data = $request->validate([
+            'date_in'      => 'nullable|date',
+            'deadline'     => 'nullable|date',
+            'assign_by_id' => 'nullable|string|max:255',
+            'assign_to_id' => 'nullable|string|max:255',
+            'type_label'   => 'nullable|string|max:255',
+            'company_id'   => 'nullable|string|max:255',
+            'task'         => 'nullable|string|max:255',
+            'pic_name'     => 'nullable|string|max:255',
+            'product_id'   => 'nullable|string|max:255',
+            'status'       => 'nullable|string|max:255',
+            'remarks'      => 'nullable|string',
+        ]);
+
+        $item->fill($data);
+        $item->updated_by = Auth::id();
+        $item->save();
+
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user();
+        return response()->json([
+            'ok'   => true,
+            'data' => array_merge($item->toArray(), [
+                'can_update' => $user?->can('update', $item) ?? false,
+                'can_delete' => $user?->can('delete', $item) ?? false,
+            ]),
+        ]);
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $item = Item::findOrFail($id);
+        $this->authorize('update', $item);
+
+        $data = $request->validate([
+            'status' => ['required', Rule::in(['Pending','In Progress','Completed'])],
+        ]);
+
+        $item->status = $data['status'];
+        $item->updated_by = Auth::id();
+        $item->save();
+
+        return response()->json([
+            'ok' => true,
+            'id' => (int)$id,
+            'status' => $item->status,
+        ]);
+    }
+
+    public function destroy(int $id)
+    {
+        $item = Item::findOrFail($id);
+        $this->authorize('delete', $item);
+
+        $item->delete();
+
+        return response()->json(['ok' => true, 'deleted_id' => $id]);
+    }
+
     public function events(Request $request)
     {
+        $this->authorize('viewAny', Item::class);
+
         $filters = $this->cleanFilters($request);
 
         try {
@@ -94,10 +324,10 @@ class ItemDashboardController extends Controller
 
             $events = $rows->map(function ($row) {
                 $titleParts = [
-                    $row->company_id ?? '-',
-                    $row->product_id ?? '-',
-                    $row->pic_name   ?? '-',
-                    $row->status     ?? '-',
+                    $row->assign_to_id ?? '-',
+                    $row->task         ?? '-',
+                    $row->company_id   ?? '-',
+                    $row->status       ?? '-',
                 ];
                 return [
                     'id'     => $row->id,
@@ -110,44 +340,6 @@ class ItemDashboardController extends Controller
             return response()->json($events);
         } catch (\Throwable $e) {
             return response()->json(['ok' => false, 'error' => $e->getMessage()], 500);
-        }
-    }
-
-    public function store(Request $request)
-    {
-        // FIXED: Changed to string validation
-        $data = $request->validate([
-            'date_in'      => 'nullable|date',
-            'deadline'     => 'nullable|date',
-            'assign_by_id' => 'nullable|string|max:255',
-            'assign_to_id' => 'nullable|string|max:255',
-            'type_label'   => 'nullable|string|max:255',
-            'company_id'   => 'nullable|string|max:255',
-            'pic_name'     => 'nullable|string|max:255',
-            'product_id'   => 'nullable|string|max:255',
-            'status'       => 'required|string|max:255',
-            'remarks'      => 'nullable|string',
-        ]);
-
-        try {
-            $data['created_by'] = Auth::id();
-            $data['updated_by'] = Auth::id();
-
-            $item = Item::create($data);
-
-            return response()->json(['ok' => true, 'message' => 'Item created', 'data' => $item], 201);
-        } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'error' => $e->getMessage()], 500);
-        }
-    }
-
-    public function show($id)
-    {
-        try {
-            $item = Item::where('id', $id)->firstOrFail();
-            return response()->json($item);
-        } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'error' => $e->getMessage()], 404);
         }
     }
 }

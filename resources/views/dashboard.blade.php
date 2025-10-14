@@ -1,319 +1,406 @@
 @extends('layouts.app')
 
 @section('head')
-<title>Items Dashboard</title>
+@vite(['resources/css/app.css', 'resources/css/dashboard.css', 'resources/js/app.js'])
+<title>Outstanding Matters</title>
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-
-{{-- FullCalendar v5.11.3 CSS --}}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
-
-<style>
-  :root{
-    --paper:#F7F7F9;
-    --surface:#FFFFFF;
-    --ink:#1C1E26;
-    --hair:#EAEAEA;
-    --brand:#22255b;
-    --brand2:#4bbbed;
-    --danger:#d33831;
-    --muted:#6B7280;
-  }
-
-  body{
-    background:var(--paper);
-    color:var(--ink);
-    font-family:Inter,system-ui;
-  }
-
-  body.modal-open{
-    overflow:hidden !important;
-  }
-
-  .card{
-    background:var(--surface);
-    border:1px solid var(--hair);
-    border-radius:14px;
-  }
-
-  .badge{
-    display:inline-flex;
-    align-items:center;
-    padding:.125rem .5rem;
-    font-size:.75rem;
-    border-radius:9999px;
-    border:1px solid var(--hair);
-  }
-
-  .badge.Pending{ background:#fff7ed; border-color:#fdba74; }
-  .badge.In\ Progress{ background:#eff6ff; border-color:#93c5fd; }
-  .badge.Done{ background:#ecfdf5; border-color:#86efac; }
-  .badge.Completed{ background:#ecfdf5; border-color:#86efac; }
-  .badge.Hold,.badge.Blocked{ background:#fef2f2; border-color:#fecaca; }
-
-  .table-sticky thead th{
-    position:sticky;
-    top:0;
-    background:var(--surface);
-    z-index:10;
-  }
-
-  .row-hover:hover{
-    background:#fafafa;
-    cursor:pointer;
-  }
-
-  /* MODAL STYLES - CRITICAL FOR CENTERING */
-  .modal-overlay{
-    display:none !important;
-    position:fixed !important;
-    top:0 !important;
-    left:0 !important;
-    right:0 !important;
-    bottom:0 !important;
-    background:rgba(0,0,0,.5) !important;
-    z-index:9999 !important;
-    align-items:center !important;
-    justify-content:center !important;
-    padding:1rem !important;
-  }
-
-  .modal-overlay.active{
-    display:flex !important;
-  }
-
-  .modal-content{
-    background:white !important;
-    border-radius:1rem !important;
-    box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04) !important;
-    max-height:90vh !important;
-    overflow-y:auto !important;
-    position:relative !important;
-  }
-</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css">
 @endsection
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-
-  {{-- Header with Create and Export Buttons --}}
-<div class="flex justify-between items-center">
-  <h1 class="text-2xl font-semibold text-gray-800">Items Dashboard</h1>
-  <div class="flex gap-3">
-    {{-- EXPORT BUTTON --}}
-    <button
-      id="btnExport"
-      type="button"
-      class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors duration-200 flex items-center gap-2 shadow-sm">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-      Export Excel
-    </button>
-
-    {{-- CREATE BUTTON --}}
-    <button
-      id="btnCreate"
-      type="button"
-      class="bg-[var(--brand)] text-white px-4 py-2 rounded-md hover:bg-[var(--brand2)] transition-colors duration-200 flex items-center gap-2 shadow-sm">
-      <span class="text-lg">+</span> Create Task
-    </button>
+<div class="dashboard-wrapper">
+  <div class="bg-gradient-animated"></div>
+  <div class="particles">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
   </div>
-</div>
 
+  {{-- Toolbar --}}
+  <div class="toolbar glass-morphism">
+    <div class="toolbar-content">
+      <h1 class="page-title">
+        <span class="title-icon">📊</span>
+        <span class="title-text">Outstanding Matters</span>
+        <span class="title-pulse"></span>
+      </h1>
+      <div class="toolbar-actions">
+        @can('export', \App\Models\Item::class)
+          <button id="btnExport" type="button" class="btn btn-success magnetic">
+            <span class="btn-bg"></span>
+            <span class="btn-content">
+              <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Export Excel
+            </span>
+          </button>
+        @endcan
+
+        @can('create', \App\Models\Item::class)
+          <button id="btnCreate" type="button" class="btn btn-primary magnetic">
+            <span class="btn-bg"></span>
+            <span class="btn-content">
+              <span class="btn-plus">+</span> Create Task
+            </span>
+          </button>
+        @endcan
+
+        @role('admin')
+            <button id="btnOpenRegisterUser" type="button" class="btn btn-secondary magnetic">
+            <span class="btn-bg"></span>
+            <span class="btn-content">Register User/Admin</span>
+            </button>
+        @endrole
+      </div>
+
+      <form method="POST" action="{{ route('logout') }}">
+  @csrf
+  <button type="submit" class="btn btn-secondary magnetic">
+    <span class="btn-bg"></span>
+    <span class="btn-content">Logout</span>
+  </button>
+</form>
+    </div>
+  </div>
   {{-- Filters --}}
-  <div class="card p-4">
-    <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-3">
-      <div>
-        <label class="text-xs text-gray-500">DATE IN</label>
-        <input type="date" id="f_date_in_from" class="w-full border rounded-md px-2 py-1">
-      </div>
-      <div>
-        <label class="text-xs text-gray-500">ASSIGN BY</label>
-        <select id="f_assign_by_id" class="w-full border rounded-md px-2 py-1">
-          <option value="">All</option>
-          @foreach($distinct['assign_by'] as $v)
+  <div class="card">
+    <div class="filter-panel glass-morphism slide-in-up">
+      <div class="filter-grid">
+        <div class="form-group animate-fade-in" style="animation-delay: 0.05s;">
+          <label class="form-label">Date In</label>
+          <input type="date" id="f_date_in_from" class="form-input glow-on-focus">
+        </div>
+        <div class="form-group animate-fade-in" style="animation-delay: 0.1s;">
+          <label class="form-label">Assign By</label>
+          <select id="f_assign_by_id" class="form-select">
+            <option value="">All</option>
+            @foreach($distinct['assign_by'] as $v)
+              <option value="{{ $v }}">{{ $v }}</option>
+            @endforeach
+          </select>
+        </div>
+        <div class="form-group animate-fade-in" style="animation-delay: 0.12s;">
+        <label class="form-label">Assign To</label>
+        <select id="f_assign_to_id" class="form-select">
+            <option value="">All</option>
+            @foreach($distinct['assign_to'] as $v)
             <option value="{{ $v }}">{{ $v }}</option>
-          @endforeach
+            @endforeach
         </select>
-      </div>
-      <div>
-        <label class="text-xs text-gray-500">INTERNAL/CLIENT</label>
-        <select id="f_type_label" class="w-full border rounded-md px-2 py-1">
-          <option value="">All</option>
-          @foreach($distinct['type_labels'] as $v)
-            <option value="{{ $v }}">{{ $v }}</option>
-          @endforeach
-        </select>
-      </div>
-      <div>
-        <label class="text-xs text-gray-500">COMPANY</label>
-        <select id="f_company_id" class="w-full border rounded-md px-2 py-1">
-          <option value="">All</option>
-          @foreach($distinct['companies'] as $v)
-            <option value="{{ $v }}">{{ $v }}</option>
-          @endforeach
-        </select>
-      </div>
-      <div>
-        <label class="text-xs text-gray-500">PIC</label>
-        <select id="f_pic_name" class="w-full border rounded-md px-2 py-1">
-          <option value="">All</option>
-          @foreach($distinct['pic_names'] as $v)
-            <option value="{{ $v }}">{{ $v }}</option>
-          @endforeach
-        </select>
-      </div>
-      <div>
-        <label class="text-xs text-gray-500">PRODUCT</label>
-        <select id="f_product_id" class="w-full border rounded-md px-2 py-1">
-          <option value="">All</option>
-          @foreach($distinct['products'] as $v)
-            <option value="{{ $v }}">{{ $v }}</option>
-          @endforeach
-        </select>
-      </div>
-      <div>
-        <label class="text-xs text-gray-500">STATUS</label>
-        <select id="f_status" class="w-full border rounded-md px-2 py-1">
-          <option value="">All</option>
-          @foreach($distinct['statuses'] as $v)
-            <option value="{{ $v }}">{{ $v }}</option>
-          @endforeach
-        </select>
-      </div>
-
-      <div class="flex items-end gap-2">
-        <button id="btnApply" class="px-3 py-2 rounded-md bg-[var(--brand)] text-white hover:bg-[var(--brand2)] transition-colors">Apply</button>
-        <button id="btnClear" class="px-3 py-2 rounded-md border hover:bg-gray-50 transition-colors">Clear</button>
+        </div>
+        <div class="form-group animate-fade-in" style="animation-delay: 0.15s;">
+          <label class="form-label">Internal/Client</label>
+          <select id="f_type_label" class="form-select">
+            <option value="">All</option>
+            @foreach($distinct['type_labels'] as $v)
+              <option value="{{ $v }}">{{ $v }}</option>
+            @endforeach
+          </select>
+        </div>
+        <div class="form-group animate-fade-in" style="animation-delay: 0.2s;">
+          <label class="form-label">Company</label>
+          <select id="f_company_id" class="form-select">
+            <option value="">All</option>
+            @foreach($distinct['companies'] as $v)
+              <option value="{{ $v }}">{{ $v }}</option>
+            @endforeach
+          </select>
+        </div>
+        <div class="form-group animate-fade-in" style="animation-delay: 0.25s;">
+          <label class="form-label">PIC</label>
+          <select id="f_pic_name" class="form-select">
+            <option value="">All</option>
+            @foreach($distinct['pic_names'] as $v)
+              <option value="{{ $v }}">{{ $v }}</option>
+            @endforeach
+          </select>
+        </div>
+        <div class="form-group animate-fade-in" style="animation-delay: 0.3s;">
+          <label class="form-label">Product</label>
+          <select id="f_product_id" class="form-select">
+            <option value="">All</option>
+            @foreach($distinct['products'] as $v)
+              <option value="{{ $v }}">{{ $v }}</option>
+            @endforeach
+          </select>
+        </div>
+        <div class="form-group animate-fade-in" style="animation-delay: 0.35s;">
+          <label class="form-label">Status</label>
+          <select id="f_status" class="form-select">
+            <option value="">All</option>
+            @foreach($distinct['statuses'] as $v)
+              <option value="{{ $v }}">{{ $v }}</option>
+            @endforeach
+          </select>
+        </div>
+        <div class="filter-actions animate-fade-in" style="animation-delay: 0.4s;">
+          <button id="btnApply" class="btn btn-primary btn-filter magnetic">Apply</button>
+          <button id="btnClear" class="btn btn-secondary btn-filter magnetic">Clear</button>
+        </div>
       </div>
     </div>
   </div>
 
   {{-- Table --}}
-  <div class="card p-4">
-    <div class="flex items-center justify-between mb-3">
-      <h2 class="font-semibold">Tasks</h2>
-      <div class="text-xs text-gray-500">Auto-rotates 7 rows every 5s • Auto-refresh 30s</div>
-    </div>
+  <div class="card">
+    <div class="table-section glass-morphism slide-in-up" style="animation-delay: 0.2s;">
+      <div class="table-header">
+        <h2>
+          <span class="section-icon">📋</span>
+          Tasks
+        </h2>
+        <div class="table-meta">
+          <span class="pulse-dot"></span>
+          Auto-rotates 7 rows every 5s • Auto-refresh 30s
+        </div>
+      </div>
 
-    <div class="overflow-x-auto table-sticky">
-      <table class="min-w-full text-sm">
-        <thead class="border-b">
-          <tr class="text-left">
-            <th class="py-2 px-2">DATE IN</th>
-            <th class="py-2 px-2">DEADLINE</th>
-            <th class="py-2 px-2">ASSIGN BY</th>
-            <th class="py-2 px-2">ASSIGN TO</th>
-            <th class="py-2 px-2">INTERNAL/CLIENT</th>
-            <th class="py-2 px-2">COMPANY</th>
-            <th class="py-2 px-2">PIC</th>
-            <th class="py-2 px-2">PRODUCT</th>
-            <th class="py-2 px-2">STATUS</th>
-            <th class="py-2 px-2">REMARKS</th>
-          </tr>
-        </thead>
-        <tbody id="rows" class="divide-y"></tbody>
-      </table>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th><span class="th-content">Date In</span></th>
+              <th><span class="th-content">Deadline</span></th>
+              <th><span class="th-content">Assign By</span></th>
+              <th><span class="th-content">Assign To</span></th>
+              <th><span class="th-content">Internal/Client</span></th>
+              <th><span class="th-content">Company</span></th>
+              <th><span class="th-content">Task</span></th>
+              <th><span class="th-content">PIC</span></th>
+              <th><span class="th-content">Product</span></th>
+              <th><span class="th-content">Status</span></th>
+              <th><span class="th-content">Remarks</span></th>
+              <th><span class="th-content">Action</span></th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
   {{-- Calendar --}}
-  <div class="card p-4">
-    <h2 class="font-semibold mb-3">Calendar (Deadlines)</h2>
-    <div id="calendar"></div>
+  <div class="card">
+    <div class="calendar-section glass-morphism slide-in-up" style="animation-delay: 0.3s;">
+      <div class="calendar-header">
+        <h2>
+          <span class="section-icon">📅</span>
+          Calendar (Deadlines)
+        </h2>
+      </div>
+      <div class="calendar-wrapper">
+        <div id="calendar"></div>
+      </div>
+    </div>
   </div>
 </div>
 
-{{-- CREATE ITEM MODAL - ALL STRING INPUTS EXCEPT DATES --}}
+@role('admin')
+<div id="modalRegisterUser" class="modal-backdrop hidden">
+  <div class="modal-card glass-morphism">
+    <div class="modal-header">
+      <h3>Register User / Admin</h3>
+      <button type="button" class="modal-close" id="btnCloseRegisterUser">×</button>
+    </div>
+
+    <form id="formRegisterUser" method="POST" action="{{ route('admin.users.store') }}">
+      @csrf
+      <div class="modal-body grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="form-group">
+          <label class="form-label">Name</label>
+          <input class="form-input" type="text" name="name" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" type="email" name="email" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" type="password" name="password" minlength="8" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Role</label>
+          <select class="form-select" name="role" required>
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="btnCancelRegisterUser">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create</button>
+      </div>
+    </form>
+  </div>
+</div>
+@endrole
+
+
+{{-- CREATE MODAL --}}
 <div id="createModal" class="modal-overlay">
-  <div class="modal-content w-full max-w-2xl p-6">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-semibold text-gray-800">Create New Task</h2>
-      <button id="btnCloseCreate" type="button" class="text-gray-400 hover:text-gray-600 text-3xl leading-none transition-colors">&times;</button>
+  <div class="modal-content modal-scale-in">
+    <div class="modal-header">
+      <h2>
+        <span class="modal-icon">✨</span>
+        Create New Task
+      </h2>
+      <button id="btnCloseCreate" type="button" class="modal-close">&times;</button>
     </div>
 
     <form id="createForm">
       @csrf
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {{-- DATE IN - Keep as date --}}
-        <div>
-          <label class="text-sm font-medium text-gray-700 block mb-1">Date In <span class="text-red-500">*</span></label>
-          <input type="date" name="date_in" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[var(--brand2)] focus:border-transparent">
+      <div class="modal-form-grid">
+        <div class="modal-form-group">
+          <label class="modal-form-label">Date In <span class="required">*</span></label>
+          <input type="date" name="date_in" required class="modal-form-input">
         </div>
-
-        {{-- DEADLINE - Keep as date --}}
-        <div>
-          <label class="text-sm font-medium text-gray-700 block mb-1">Deadline <span class="text-red-500">*</span></label>
-          <input type="date" name="deadline" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[var(--brand2)] focus:border-transparent">
+        <div class="modal-form-group">
+          <label class="modal-form-label">Deadline <span class="required">*</span></label>
+          <input type="date" name="deadline" required class="modal-form-input">
         </div>
-
-        {{-- ASSIGN BY - Changed to text --}}
-        <div>
-          <label class="text-sm font-medium text-gray-700 block mb-1">Assign By</label>
-          <input type="text" name="assign_by_id" placeholder="Enter Assign By" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[var(--brand2)] focus:border-transparent">
+        <div class="modal-form-group">
+          <label class="modal-form-label">Assign By</label>
+          <input type="text" name="assign_by_id" placeholder="Enter Assign By" class="modal-form-input">
         </div>
-
-        {{-- ASSIGN TO - Changed to text --}}
-        <div>
-          <label class="text-sm font-medium text-gray-700 block mb-1">Assign To</label>
-          <input type="text" name="assign_to_id" placeholder="Enter Assign To" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[var(--brand2)] focus:border-transparent">
+        <div class="modal-form-group">
+          <label class="modal-form-label">Assign To</label>
+          <input type="text" name="assign_to_id" placeholder="Enter Assign To" class="modal-form-input">
         </div>
-
-        {{-- INTERNAL/CLIENT - Keep as dropdown --}}
-        <div>
-          <label class="text-sm font-medium text-gray-700 block mb-1">Internal/Client</label>
-          <select name="type_label" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[var(--brand2)] focus:border-transparent">
+        <div class="modal-form-group">
+          <label class="modal-form-label">Internal/Client</label>
+          <select name="type_label" class="modal-form-select">
             <option value="">Select Type</option>
             <option value="INTERNAL">INTERNAL</option>
             <option value="CLIENT">CLIENT</option>
           </select>
         </div>
-
-        {{-- COMPANY - Changed to text --}}
-        <div>
-          <label class="text-sm font-medium text-gray-700 block mb-1">Company</label>
-          <input type="text" name="company_id" placeholder="Enter Company Name/ID" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[var(--brand2)] focus:border-transparent">
+        <div class="modal-form-group">
+          <label class="modal-form-label">Company</label>
+          <input type="text" name="company_id" placeholder="Enter Company Name/ID" class="modal-form-input">
         </div>
-
-        {{-- PIC NAME - Already text --}}
-        <div>
-          <label class="text-sm font-medium text-gray-700 block mb-1">PIC Name</label>
-          <input type="text" name="pic_name" maxlength="150" placeholder="Enter PIC Name" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[var(--brand2)] focus:border-transparent">
+        <div class="modal-form-group">
+          <label class="modal-form-label">Task</label>
+          <input type="text" name="task" placeholder="Enter Task" class="modal-form-input">
         </div>
-
-        {{-- PRODUCT - Changed to text --}}
-        <div>
-          <label class="text-sm font-medium text-gray-700 block mb-1">Product</label>
-          <input type="text" name="product_id" placeholder="Enter Product Name/ID" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[var(--brand2)] focus:border-transparent">
+        <div class="modal-form-group">
+          <label class="modal-form-label">PIC Name</label>
+          <input type="text" name="pic_name" maxlength="150" placeholder="Enter PIC Name" class="modal-form-input">
         </div>
-
-        {{-- STATUS - Keep as dropdown --}}
-        <div class="md:col-span-2">
-          <label class="text-sm font-medium text-gray-700 block mb-1">Status <span class="text-red-500">*</span></label>
-          <select name="status" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[var(--brand2)] focus:border-transparent">
+        <div class="modal-form-group">
+          <label class="modal-form-label">Product</label>
+          <input type="text" name="product_id" placeholder="Enter Product Name/ID" class="modal-form-input">
+        </div>
+        <div class="modal-form-group full-width">
+          <label class="modal-form-label">Status <span class="required">*</span></label>
+          <select name="status" required class="modal-form-select">
             <option value="">Select Status</option>
             <option value="Pending">Pending</option>
             <option value="In Progress">In Progress</option>
             <option value="Completed">Completed</option>
           </select>
         </div>
-
-        {{-- REMARKS - Already textarea --}}
-        <div class="md:col-span-2">
-          <label class="text-sm font-medium text-gray-700 block mb-1">Remarks</label>
-          <textarea name="remarks" rows="3" placeholder="Enter any additional notes or remarks..." class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-[var(--brand2)] focus:border-transparent"></textarea>
+        <div class="modal-form-group full-width">
+          <label class="modal-form-label">Remarks</label>
+          <textarea name="remarks" rows="3" placeholder="Enter any additional notes or remarks..." class="modal-form-textarea"></textarea>
         </div>
       </div>
 
-      <div class="mt-6 flex justify-end gap-3">
-        <button type="button" id="btnCancelCreate" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
-          Cancel
+      <div class="modal-footer">
+        <button type="button" id="btnCancelCreate" class="btn btn-secondary magnetic">Cancel</button>
+        <button type="submit" id="btnSubmitCreate" class="btn btn-primary magnetic">
+          <span class="btn-bg"></span>
+          <span class="btn-content">Save Task</span>
         </button>
-        <button type="submit" id="btnSubmitCreate" class="px-4 py-2 bg-[var(--brand)] text-white rounded-md hover:bg-[var(--brand2)] transition-colors">
-          Save Task
+      </div>
+    </form>
+  </div>
+</div>
+
+{{-- EDIT MODAL --}}
+<div id="editModal" class="modal-overlay">
+  <div class="modal-content modal-scale-in">
+    <div class="modal-header">
+      <h2>
+        <span class="modal-icon">✏️</span>
+        Edit Task
+      </h2>
+      <button id="btnCloseEdit" type="button" class="modal-close">&times;</button>
+    </div>
+
+    <form id="editForm">
+      @csrf
+      <input type="hidden" name="id">
+
+      <div class="modal-form-grid">
+        <div class="modal-form-group">
+          <label class="modal-form-label">Date In <span class="required">*</span></label>
+          <input type="date" name="date_in" required class="modal-form-input">
+        </div>
+        <div class="modal-form-group">
+          <label class="modal-form-label">Deadline <span class="required">*</span></label>
+          <input type="date" name="deadline" required class="modal-form-input">
+        </div>
+        <div class="modal-form-group">
+          <label class="modal-form-label">Assign By</label>
+          <input type="text" name="assign_by_id" placeholder="Enter Assign By" class="modal-form-input">
+        </div>
+        <div class="modal-form-group">
+          <label class="modal-form-label">Assign To</label>
+          <input type="text" name="assign_to_id" placeholder="Enter Assign To" class="modal-form-input">
+        </div>
+        <div class="modal-form-group">
+          <label class="modal-form-label">Internal/Client</label>
+          <select name="type_label" class="modal-form-select">
+            <option value="">Select Type</option>
+            <option value="INTERNAL">INTERNAL</option>
+            <option value="CLIENT">CLIENT</option>
+          </select>
+        </div>
+        <div class="modal-form-group">
+          <label class="modal-form-label">Company</label>
+          <input type="text" name="company_id" placeholder="Enter Company Name/ID" class="modal-form-input">
+        </div>
+        <div class="modal-form-group">
+          <label class="modal-form-label">Task</label>
+          <input type="text" name="task" placeholder="Enter Task" class="modal-form-input">
+        </div>
+        <div class="modal-form-group">
+          <label class="modal-form-label">PIC Name</label>
+          <input type="text" name="pic_name" maxlength="150" placeholder="Enter PIC Name" class="modal-form-input">
+        </div>
+        <div class="modal-form-group">
+          <label class="modal-form-label">Product</label>
+          <input type="text" name="product_id" placeholder="Enter Product Name/ID" class="modal-form-input">
+        </div>
+        <div class="modal-form-group full-width">
+          <label class="modal-form-label">Status <span class="required">*</span></label>
+          <select name="status" required class="modal-form-select">
+            <option value="">Select Status</option>
+            <option value="Pending">Pending</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+        <div class="modal-form-group full-width">
+          <label class="modal-form-label">Remarks</label>
+          <textarea name="remarks" rows="3" placeholder="Enter any additional notes or remarks..." class="modal-form-textarea"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" id="btnCancelEdit" class="btn btn-secondary magnetic">Cancel</button>
+        <button type="submit" id="btnSubmitEdit" class="btn btn-primary magnetic">
+          <span class="btn-bg"></span>
+          <span class="btn-content">Update Task</span>
         </button>
       </div>
     </form>
@@ -322,18 +409,26 @@
 
 {{-- DETAIL MODAL --}}
 <div id="detailModal" class="modal-overlay">
-  <div class="modal-content w-full max-w-2xl p-6">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-lg font-semibold text-gray-800">Task Details</h2>
-      <button id="modalClose" type="button" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+  <div class="modal-content modal-scale-in">
+    <div class="modal-header">
+      <h2>
+        <span class="modal-icon">🔍</span>
+        Task Details
+      </h2>
+      <div style="display: flex; gap: 0.5rem;">
+        <button id="btnEdit" type="button" class="btn btn-primary magnetic" style="display: none;">
+          <span class="btn-content">✏️ Edit</span>
+        </button>
+        <button id="modalClose" type="button" class="modal-close">&times;</button>
+      </div>
     </div>
-    <div id="detailBody" class="grid grid-cols-2 gap-4"></div>
+    <div id="detailBody" class="detail-grid"></div>
   </div>
 </div>
 @endsection
 
 @section('scripts')
-{{-- FullCalendar v5.11.3 JS --}}
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
 
 <script>
@@ -341,76 +436,205 @@ $(function(){
   try {
     const CSRF = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-    // State
     let allData = [];
     let windowStart = 0;
     const WINDOW_SIZE = 7;
     let rotateTimer = null;
     let refreshTimer = null;
     let calendar = null;
+    let currentDetailData = null;
 
-    // Modal helpers
+    // Magnetic button effect
+    document.querySelectorAll('.magnetic').forEach(btn => {
+      btn.addEventListener('mousemove', function(e) {
+        const rect = this.getBoundingClientRect();
+        const x = e.clientX - rect.left - rect.width / 2;
+        const y = e.clientY - rect.top - rect.height / 2;
+        this.style.transform = `translate(${x * 0.2}px, ${y * 0.2}px)`;
+      });
+      btn.addEventListener('mouseleave', function() {
+        this.style.transform = 'translate(0, 0)';
+      });
+    });
+
+    // Tom Select Configuration
+    const tsBrowseSearch = {
+      allowEmptyOption: true,
+      create: false,
+      preload: true,
+      openOnFocus: true,
+      maxOptions: 1000,
+      searchField: ['text'],
+      closeAfterSelect: true,
+      dropdownParent: 'body',
+      plugins: { clear_button: { title: 'Clear selection' } },
+      render: {
+        option: function(data, escape) { return '<div>' + escape(data.text) + '</div>'; },
+        item: function(data, escape) { return '<div>' + escape(data.text) + '</div>'; }
+      }
+    };
+
+    new TomSelect('#f_assign_by_id', tsBrowseSearch);
+    new TomSelect('#f_assign_to_id', tsBrowseSearch);
+    new TomSelect('#f_type_label',   tsBrowseSearch);
+    new TomSelect('#f_company_id',   tsBrowseSearch);
+    new TomSelect('#f_pic_name',     tsBrowseSearch);
+    new TomSelect('#f_product_id',   tsBrowseSearch);
+    new TomSelect('#f_status',       tsBrowseSearch);
+
     function openModal(modalId){
       const modal = document.getElementById(modalId);
       modal.classList.add('active');
       document.body.classList.add('modal-open');
-      console.log('Modal opened:', modalId);
     }
 
     function closeModal(modalId){
       const modal = document.getElementById(modalId);
       modal.classList.remove('active');
       document.body.classList.remove('modal-open');
-      console.log('Modal closed:', modalId);
     }
 
-    // Helpers
+    function setInput(el, val){
+      if(el) el.value = (val ?? '');
+    }
+
     function hasAnyFilter(){
-      return [
-        '#f_date_in_from','#f_date_in_to','#f_deadline_from','#f_deadline_to',
-        '#f_assign_by_id','#f_assign_to_id','#f_type_label','#f_company_id',
-        '#f_pic_name','#f_product_id','#f_status'
-      ].some(sel => $(sel).val());
+    return [
+        '#f_date_in_from','#f_assign_by_id','#f_assign_to_id','#f_type_label',
+        '#f_company_id','#f_pic_name','#f_product_id','#f_status','#f_q'
+    ].some(sel => $(sel).val());
     }
 
     function statusBadge(status){
       if(!status) return '<span class="badge">-</span>';
       const safe = String(status).replace(/\s/g,'\\ ');
-      return `<span class="badge ${safe}">${status}</span>`;
+      return `<span class="badge badge-animated ${safe}">${status}</span>`;
     }
 
     function fmt(d){
-      if(!d) return '-';
-      try{
-        const dt = new Date(d);
-        if(Number.isNaN(dt.getTime())) return d;
-        return dt.toISOString().slice(0,10);
-      }catch(e){ return d; }
+      if (!d) return '-';
+      if (typeof d === 'string') {
+        const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (m) {
+          const yy = m[1].slice(-2);
+          const mm = m[2];
+          const dd = m[3];
+          return `${dd}/${mm}/${yy}`;
+        }
+      }
+      const dt = new Date(d);
+      if (Number.isNaN(dt.getTime())) return d;
+      const dd = String(dt.getDate()).padStart(2,'0');
+      const mm = String(dt.getMonth()+1).padStart(2,'0');
+      const yy = String(dt.getFullYear()).slice(-2);
+      return `${dd}/${mm}/${yy}`;
     }
 
-    function rowHtml(r){
-      return `
-        <tr class="row-hover" data-id="${r.id}">
-          <td class="py-2 px-2">${fmt(r.date_in)}</td>
-          <td class="py-2 px-2">${fmt(r.deadline)}</td>
-          <td class="py-2 px-2">${r.assign_by_id ?? '-'}</td>
-          <td class="py-2 px-2">${r.assign_to_id ?? '-'}</td>
-          <td class="py-2 px-2">${r.type_label ?? '-'}</td>
-          <td class="py-2 px-2">${r.company_name ?? r.company_id ?? '-'}</td>
-          <td class="py-2 px-2">${r.pic_name ?? '-'}</td>
-          <td class="py-2 px-2">${r.product_name ?? r.product_id ?? '-'}</td>
-          <td class="py-2 px-2">${statusBadge(r.status)}</td>
-          <td class="py-2 px-2 truncate max-w-[200px]" title="${(r.remarks||'').replace(/"/g,'&quot;')}">${r.remarks ?? ''}</td>
-        </tr>
-      `;
+   function rowHtml(r){
+
+
+  const btnDelete = r.can_delete
+    ? `<button type="button" class="btn btn-danger btnDelete magnetic" data-id="${r.id}">
+         <span class="btn-content">Delete</span>
+       </button>`
+    : '';
+
+  return `
+    <tr data-id="${r.id}" data-can-update="${r.can_update ? '1':'0'}" class="table-row-animated">
+      <td><span class="cell-content">${fmt(r.date_in)}</span></td>
+      <td><span class="cell-content">${fmt(r.deadline)}</span></td>
+      <td><span class="cell-content">${r.assign_by_id ?? '-'}</span></td>
+      <td><span class="cell-content">${r.assign_to_id ?? '-'}</span></td>
+      <td><span class="cell-content">${r.type_label ?? '-'}</span></td>
+      <td><span class="cell-content">${r.company_name ?? r.company_id ?? '-'}</span></td>
+      <td><span class="cell-content">${r.task ?? r.task_name ?? r.task_id ?? '-'}</span></td>
+      <td><span class="cell-content">${r.pic_name ?? '-'}</span></td>
+      <td><span class="cell-content">${r.product_name ?? r.product_id ?? '-'}</span></td>
+      <td>${statusBadge(r.status)}</td>
+      <td class="truncate max-w-200" title="${(r.remarks||'').replace(/"/g,'&quot;')}"><span class="cell-content">${r.remarks ?? ''}</span></td>
+      <td style="display:flex; gap:.5rem;">
+        ${btnDelete}
+      </td>
+    </tr>
+  `;
+}
+
+function openEditModal(id){
+  fetch(`{{ route('dashboard.items.editPayload', ['id' => '__ID__']) }}`.replace('__ID__', id), {
+    headers: { 'X-CSRF-TOKEN': CSRF }
+  })
+  .then(async (r) => {
+    if (r.status === 403) {
+      alert("You don't have permission to edit this item.");
+      throw new Error('403');
     }
+    if (!r.ok) {
+      throw new Error(`HTTP ${r.status}`);
+    }
+    return r.json();
+  })
+  .then(({data}) => {
+    currentDetailData = data;
+    fillEditForm(data);
+    openModal('editModal'); // <-- hanya kebuka kalau authorized
+  })
+  .catch(() => {/* diam: kita blok modal untuk non-owner */});
+}
+
+
+
+    // Delete click (AJAX)
+    $('#rows').on('click', '.btnDelete', async function(e){
+      e.stopPropagation();
+      const id = $(this).data('id');
+      if(!confirm('Delete this item?')) return;
+
+
+
+      try{
+        const res = await fetch(`{{ route('dashboard.items.destroy', ['id' => '__ID__']) }}`.replace('__ID__', id), {
+          method: 'POST',
+          headers: {
+            'X-CSRF-TOKEN': CSRF,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({_method:'DELETE'})
+        });
+
+        if(!res.ok){
+          const err = await res.json().catch(()=>({}));
+          throw new Error(err.message || `HTTP ${res.status}`);
+        }
+
+        await fetchData();
+      }catch(err){
+        console.error(err);
+        alert('Failed to delete: ' + err.message);
+      }
+    });
+
+    // Edit click (from table)
+    $('#rows').on('click', '.btnEdit', function(e){
+    e.stopPropagation();
+    const id = $(this).data('id');
+    const row = $(this).closest('tr');
+    const canUpdate = row.data('can-update') === 1 || row.data('can-update') === '1';
+
+    if (!canUpdate) {
+        alert("You are not allowed to edit this item.");
+        return;
+    }
+
+    openEditModal(id);
+    });
 
     function renderWindow(){
       const tbody = $('#rows');
       tbody.empty();
 
       if(allData.length === 0){
-        tbody.append(`<tr><td class="py-6 px-2 text-center text-muted" colspan="10">No data</td></tr>`);
+        tbody.append(`<tr><td colspan="12" style="padding:3rem 2rem; text-align:center; color:var(--muted);">No data</td></tr>`);
         return;
       }
 
@@ -419,6 +643,18 @@ $(function(){
       const slice = allData.slice(start, end);
 
       slice.forEach(r => tbody.append(rowHtml(r)));
+
+      tbody.find('.magnetic').each(function() {
+        this.addEventListener('mousemove', function(e) {
+          const rect = this.getBoundingClientRect();
+          const x = e.clientX - rect.left - rect.width / 2;
+          const y = e.clientY - rect.top - rect.height / 2;
+          this.style.transform = `translate(${x * 0.2}px, ${y * 0.2}px)`;
+        });
+        this.addEventListener('mouseleave', function() {
+          this.style.transform = 'translate(0, 0)';
+        });
+      });
     }
 
     function rotate(){
@@ -426,17 +662,20 @@ $(function(){
       windowStart = (windowStart + WINDOW_SIZE) % allData.length;
       renderWindow();
     }
-function getFilters(){
-  return {
-    date_in_from:  $('#f_date_in_from').val() || '',
-    assign_by_id:  $('#f_assign_by_id').val() || '',
-    type_label:    $('#f_type_label').val() || '',
-    company_id:    $('#f_company_id').val() || '',
-    pic_name:      $('#f_pic_name').val() || '',
-    product_id:    $('#f_product_id').val() || '',
-    status:        $('#f_status').val() || '',
-  };
-}
+
+    function getFilters(){
+    return {
+        date_in_from:  $('#f_date_in_from').val() || '',
+        assign_by_id:  $('#f_assign_by_id').val() || '',
+        assign_to_id:  $('#f_assign_to_id').val() || '',
+        type_label:    $('#f_type_label').val() || '',
+        company_id:    $('#f_company_id').val() || '',
+        pic_name:      $('#f_pic_name').val() || '',
+        product_id:    $('#f_product_id').val() || '',
+        status:        $('#f_status').val() || '',
+        q:             ($('#f_q').val() || '').trim(),
+    };
+    }
 
     function fetchData({resetWindow=true} = {}){
       const params = new URLSearchParams(getFilters()).toString();
@@ -468,7 +707,6 @@ function getFilters(){
     // CREATE MODAL EVENTS
     $('#btnCreate').on('click', function(e){
       e.preventDefault();
-      console.log('Create button clicked');
       openModal('createModal');
     });
 
@@ -478,7 +716,6 @@ function getFilters(){
       $('#createForm')[0].reset();
     });
 
-    // Close modal when clicking backdrop
     $('#createModal').on('click', function(e){
       if(e.target.id === 'createModal'){
         closeModal('createModal');
@@ -486,35 +723,19 @@ function getFilters(){
       }
     });
 
-    // Close modal on ESC key
-    $(document).on('keydown', function(e){
-      if(e.key === 'Escape'){
-        if($('#createModal').hasClass('active')){
-          closeModal('createModal');
-          $('#createForm')[0].reset();
-        }
-        if($('#detailModal').hasClass('active')){
-          closeModal('detailModal');
-        }
-      }
-    });
-
-    // Handle CREATE form submission
     $('#createForm').on('submit', async function(e){
       e.preventDefault();
 
       const submitBtn = $('#btnSubmitCreate');
-      const originalText = submitBtn.text();
-      submitBtn.prop('disabled', true).text('Saving...');
+      const originalText = submitBtn.find('.btn-content').text();
+      submitBtn.prop('disabled', true).find('.btn-content').text('Saving...');
 
       const formData = new FormData(this);
 
       try {
         const response = await fetch('{{ route("dashboard.items.store") }}', {
           method: 'POST',
-          headers: {
-            'X-CSRF-TOKEN': CSRF
-          },
+          headers: { 'X-CSRF-TOKEN': CSRF },
           body: formData
         });
 
@@ -531,7 +752,86 @@ function getFilters(){
         console.error(err);
         alert('Failed to create task.');
       } finally {
-        submitBtn.prop('disabled', false).text(originalText);
+        submitBtn.prop('disabled', false).find('.btn-content').text(originalText);
+      }
+    });
+
+    // EDIT MODAL EVENTS
+    $('#btnCloseEdit, #btnCancelEdit').on('click', function(e){
+      e.preventDefault();
+      closeModal('editModal');
+    });
+
+    $('#editModal').on('click', function(e){
+      if(e.target.id === 'editModal'){
+        closeModal('editModal');
+      }
+    });
+
+    function fillEditForm(d){
+      const f = document.getElementById('editForm');
+      setInput(f.elements['id'], d.id);
+      setInput(f.elements['date_in'], (d.date_in ?? '').slice(0,10));
+      setInput(f.elements['deadline'], (d.deadline ?? '').slice(0,10));
+      setInput(f.elements['assign_by_id'], d.assign_by_id);
+      setInput(f.elements['assign_to_id'], d.assign_to_id);
+      setInput(f.elements['type_label'], d.type_label);
+      setInput(f.elements['company_id'], d.company_id);
+      setInput(f.elements['task'], d.task);
+      setInput(f.elements['pic_name'], d.pic_name);
+      setInput(f.elements['product_id'], d.product_id);
+      setInput(f.elements['status'], d.status);
+      setInput(f.elements['remarks'], d.remarks);
+    }
+
+    $('#editForm').on('submit', async function(e){
+      e.preventDefault();
+      const f = e.currentTarget;
+      const id = f.elements['id'].value;
+
+      const payload = {
+        date_in:      f.elements['date_in'].value || null,
+        deadline:     f.elements['deadline'].value || null,
+        assign_by_id: f.elements['assign_by_id'].value || null,
+        assign_to_id: f.elements['assign_to_id'].value || null,
+        type_label:   f.elements['type_label'].value || null,
+        company_id:   f.elements['company_id'].value || null,
+        task:         f.elements['task'].value || null,
+        pic_name:     f.elements['pic_name'].value || null,
+        product_id:   f.elements['product_id'].value || null,
+        status:       f.elements['status'].value,
+        remarks:      f.elements['remarks'].value || null,
+      };
+
+      const btn = $('#btnSubmitEdit');
+      const orig = btn.find('.btn-content').text();
+      btn.prop('disabled', true).find('.btn-content').text('Updating...');
+
+      try {
+        const res = await fetch(`{{ route('dashboard.items.update', ['id' => '__ID__']) }}`.replace('__ID__', id), {
+          method: 'PATCH',
+          headers: {
+            'X-CSRF-TOKEN': CSRF,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if(!res.ok){
+          const err = await res.json().catch(()=>({}));
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+
+        alert('Task updated successfully!');
+        closeModal('editModal');
+        await fetchData();
+        if (window.calendar) calendar.refetchEvents();
+      } catch (err){
+        console.error(err);
+        alert('Update failed: ' + err.message);
+      } finally {
+        btn.prop('disabled', false).find('.btn-content').text(orig);
       }
     });
 
@@ -547,24 +847,77 @@ function getFilters(){
       if(e.target.id === 'detailModal') closeModal('detailModal');
     });
 
+    $('#btnEdit').on('click', function(){
+      if(currentDetailData){
+        fillEditForm(currentDetailData);
+        closeModal('detailModal');
+        openModal('editModal');
+      }
+    });
+
     function openDetail(id){
       fetch(`{{ route('dashboard.items.show', ['id'=>'__ID__']) }}`.replace('__ID__', id), {
         headers:{ 'X-CSRF-TOKEN': CSRF }
       })
         .then(r=>r.json())
         .then(d=>{
+          currentDetailData = d;
+
+          // Show/hide Edit button by permission
+          const editBtn = document.getElementById('btnEdit');
+          if (editBtn) {
+            editBtn.style.display = d.can_update ? 'inline-flex' : 'none';
+          }
+
           const html = `
-            <div><div class="text-xs text-gray-500">ID</div><div>${d.id}</div></div>
-            <div><div class="text-xs text-gray-500">DATE IN</div><div>${fmt(d.date_in)}</div></div>
-            <div><div class="text-xs text-gray-500">DEADLINE</div><div>${fmt(d.deadline)}</div></div>
-            <div><div class="text-xs text-gray-500">ASSIGN BY</div><div>${d.assign_by_id ?? '-'}</div></div>
-            <div><div class="text-xs text-gray-500">ASSIGN TO</div><div>${d.assign_to_id ?? '-'}</div></div>
-            <div><div class="text-xs text-gray-500">TYPE</div><div>${d.type_label ?? '-'}</div></div>
-            <div><div class="text-xs text-gray-500">COMPANY</div><div>${d.company_name ?? d.company_id ?? '-'}</div></div>
-            <div><div class="text-xs text-gray-500">PIC</div><div>${d.pic_name ?? '-'}</div></div>
-            <div><div class="text-xs text-gray-500">PRODUCT</div><div>${d.product_name ?? d.product_id ?? '-'}</div></div>
-            <div class="col-span-2"><div class="text-xs text-gray-500">STATUS</div><div>${statusBadge(d.status)}</div></div>
-            <div class="col-span-2"><div class="text-xs text-gray-500">REMARKS</div><div>${d.remarks ?? ''}</div></div>
+            <div class="detail-item">
+              <div class="detail-label">ID</div>
+              <div class="detail-value">${d.id}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Date In</div>
+              <div class="detail-value">${fmt(d.date_in)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Deadline</div>
+              <div class="detail-value">${fmt(d.deadline)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Assign By</div>
+              <div class="detail-value">${d.assign_by_id ?? '-'}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Assign To</div>
+              <div class="detail-value">${d.assign_to_id ?? '-'}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Type</div>
+              <div class="detail-value">${d.type_label ?? '-'}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Company</div>
+              <div class="detail-value">${d.company_name ?? d.company_id ?? '-'}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Task</div>
+              <div class="detail-value">${d.task ?? d.task_name ?? d.task_id ?? '-'}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">PIC</div>
+              <div class="detail-value">${d.pic_name ?? '-'}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Product</div>
+              <div class="detail-value">${d.product_name ?? d.product_id ?? '-'}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Status</div>
+              <div class="detail-value">${d.status ?? '-'}</div>
+            </div>
+            <div class="detail-item full-width">
+              <div class="detail-label">Remarks</div>
+              <div class="detail-value">${d.remarks ?? '-'}</div>
+            </div>
           `;
           $('#detailBody').html(html);
           openModal('detailModal');
@@ -572,30 +925,47 @@ function getFilters(){
         .catch(console.error);
     }
 
-    // EXPORT BUTTON
-    $('#btnExport').on('click', function(e){
-    e.preventDefault();
-    const params = new URLSearchParams(getFilters()).toString();
-    const exportUrl = `{{ route('dashboard.items.export') }}?${params}`;
-
-    // Open in new window to download
-    window.location.href = exportUrl;
-
-    console.log('Exporting with filters:', getFilters());
+    $(document).on('keydown', function(e){
+      if(e.key === 'Escape'){
+        if($('#createModal').hasClass('active')){
+          closeModal('createModal');
+          $('#createForm')[0].reset();
+        }
+        if($('#editModal').hasClass('active')){
+          closeModal('editModal');
+        }
+        if($('#detailModal').hasClass('active')){
+          closeModal('detailModal');
+        }
+      }
     });
 
-    // Filters
+    $('#btnExport').on('click', function(e){
+      e.preventDefault();
+      const params = new URLSearchParams(getFilters()).toString();
+      const exportUrl = `{{ route('dashboard.items.export') }}?${params}`;
+      window.location.href = exportUrl;
+    });
+
     $('#btnApply').on('click', async ()=>{
       await fetchData();
       renderWindow();
     });
 
     $('#btnClear').on('click', async ()=>{
-      $('#f_date_in_from,#f_date_in_to,#f_deadline_from,#f_deadline_to,#f_assign_by_id,#f_assign_to_id,#f_type_label,#f_company_id,#f_pic_name,#f_product_id,#f_status').val('');
-      await fetchData();
+    $('#f_date_in_from').val('');
+    $('#f_q').val(''); // clear search
+    const selectors = [
+        '#f_assign_by_id','#f_assign_to_id','#f_type_label',
+        '#f_company_id','#f_pic_name','#f_product_id','#f_status'
+    ];
+    selectors.forEach(sel => {
+        const instance = $(sel)[0].tomselect;
+        if(instance) instance.clear();
+    });
+    await fetchData();
     });
 
-    // Calendar
     function initCalendar(){
       const el = document.getElementById('calendar');
       calendar = new FullCalendar.Calendar(el, {
@@ -615,9 +985,9 @@ function getFilters(){
         }
       });
       calendar.render();
+      window.calendar = calendar;
     }
 
-    // Boot
     (async function boot(){
       initCalendar();
       await fetchData();

@@ -6,66 +6,51 @@ window.Alpine = Alpine;
 
 Alpine.start();
 
-// resources/js/app.js (add below your Alpine.start())
-window.createTaskModal = (actionUrl = "/items") => ({
-    open: false,
-    submitting: false,
-    errors: {},
-    form: {
-        date_in: "",
-        deadline: "",
-        assign_by_id: "",
-        assign_to_id: "",
-        type_label: "INTERNAL", // or 'CLIENT'
-        company_id: "",
-        pic_name: "",
-        product_id: "",
-        status: "",
-        remarks: "",
-    },
-    reset() {
-        this.form = {
-            date_in: "",
-            deadline: "",
-            assign_by_id: "",
-            assign_to_id: "",
-            type_label: "INTERNAL",
-            company_id: "",
-            pic_name: "",
-            product_id: "",
-            status: "",
-            remarks: "",
-        };
-        this.errors = {};
-    },
-    async submit() {
-        this.submitting = true;
-        this.errors = {};
-        try {
-            const token = document
-                .querySelector('meta[name="csrf-token"]')
-                .getAttribute("content");
-            const res = await fetch(actionUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": token,
-                    Accept: "application/json",
-                },
-                body: JSON.stringify(this.form),
+document.addEventListener("DOMContentLoaded", () => {
+    const openBtn = document.getElementById("btnOpenRegisterUser");
+    const modal = document.getElementById("modalRegisterUser");
+    const closeBtn = document.getElementById("btnCloseRegisterUser");
+    const cancelBtn = document.getElementById("btnCancelRegisterUser");
+    const form = document.getElementById("formRegisterUser");
+
+    if (openBtn && modal) {
+        const open = () => modal.classList.remove("hidden");
+        const close = () => modal.classList.add("hidden");
+
+        openBtn.addEventListener("click", open);
+        closeBtn && closeBtn.addEventListener("click", close);
+        cancelBtn && cancelBtn.addEventListener("click", close);
+
+        // OPTIONAL: submit via fetch agar tidak reload
+        form &&
+            form.addEventListener("submit", async (e) => {
+                if (!form.dataset.ajax) return; // hapus baris ini kalau mau selalu AJAX
+                e.preventDefault();
+                const fd = new FormData(form);
+                const res = await fetch(form.action, {
+                    method: "POST",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest",
+                        "X-CSRF-TOKEN": document.querySelector(
+                            'meta[name="csrf-token"]'
+                        ).content,
+                    },
+                    body: fd,
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    alert(
+                        "User created: " +
+                            data.user.email +
+                            " (" +
+                            data.user.role +
+                            ")"
+                    );
+                    close();
+                    form.reset();
+                } else {
+                    alert("Failed creating user.");
+                }
             });
-
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                this.errors = data?.errors || {};
-                throw new Error("Submit failed");
-            }
-
-            this.open = false;
-            this.reset();
-            document.dispatchEvent(new CustomEvent("items:refresh")); // your table can listen for this
-        } finally {
-            this.submitting = false;
-        }
-    },
+    }
 });

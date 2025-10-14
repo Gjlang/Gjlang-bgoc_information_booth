@@ -41,6 +41,9 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
+        // ✅ ASSIGN DEFAULT ROLE - wajib untuk Spatie Permission
+        $user->assignRole('user');
+
         event(new Registered($user));
 
         Auth::login($user);
