@@ -4,57 +4,31 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ItemDashboardController;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application.
-| These routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
-|
-*/
-
 // Redirect root → login
-Route::get('/', function () {
-    return redirect()->route('login');
-});
+Route::get('/', fn () => redirect()->route('login'));
 
-// Main dashboard (landing page)
-Route::get('/dashboard', [ItemDashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
-// Authenticated routes group
-Route::middleware('auth')->group(function () {
+// Authenticated area
+Route::middleware(['auth', 'verified'])->group(function () {
 
-    /*
-    |--------------------------------------------------------------------------
-    | Profile Routes
-    |--------------------------------------------------------------------------
-    */
+    // ---- Profile ----
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    /*
-    |--------------------------------------------------------------------------
-    | Items Dashboard Routes
-    |--------------------------------------------------------------------------
-    */
+    // ---- Main Dashboard page (legacy-friendly name) ----
+    Route::get('/dashboard', [ItemDashboardController::class, 'index'])->name('dashboard');
 
-    Route::get('/dashboard/items', [ItemDashboardController::class, 'index'])
-        ->name('items.dashboard');
-
-    Route::get('/dashboard/items/list', [ItemDashboardController::class, 'list'])
-        ->name('items.list');
-
-    Route::get('/dashboard/items/events', [ItemDashboardController::class, 'events'])
-        ->name('items.events');
-
-    Route::get('/dashboard/items/{id}', [ItemDashboardController::class, 'show'])
-        ->name('items.show');
-
+    // ---- Items under /dashboard/items with names dashboard.items.* ----
+    Route::prefix('dashboard')->name('dashboard.')->group(function () {
+        Route::prefix('items')->name('items.')->group(function () {
+            Route::get('/',        [ItemDashboardController::class, 'index'])->name('index');
+            Route::get('/list',    [ItemDashboardController::class, 'list'])->name('list');
+            Route::get('/events',  [ItemDashboardController::class, 'events'])->name('events');
+            Route::post('/',       [ItemDashboardController::class, 'store'])->name('store');
+            Route::get('/{id}',    [ItemDashboardController::class, 'show'])->whereNumber('id')->name('show');
+            Route::get('/export', [ItemDashboardController::class, 'export'])->name('export');
+        });
+    });
 });
 
-// Authentication routes (login/register/reset)
 require __DIR__.'/auth.php';
