@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - BGOC Information Booth</title>
-    @vite(['resources/css/app.css', 'resources/css/login.css'])
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="font-['Inter',sans-serif] antialiased">
-    <div class="min-h-screen bg-gradient-animated flex items-center justify-center p-4 relative overflow-hidden">
+<body class="page-login font-['Inter',sans-serif] antialiased">
+    <div class="min-h-screen login-gradient flex items-center justify-center p-4 relative overflow-hidden">
         <!-- Animated mesh gradient background -->
         <div class="gradient-mesh"></div>
 

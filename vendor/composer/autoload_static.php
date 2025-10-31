@@ -593,6 +593,8 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
     );
 
     public static $classMap = array (
+        'App\\Exports\\ItemsExport' => __DIR__ . '/../..' . '/app/Exports/ItemsExport.php',
+        'App\\Http\\Controllers\\AdminUserController' => __DIR__ . '/../..' . '/app/Http/Controllers/AdminUserController.php',
         'App\\Http\\Controllers\\Auth\\AuthenticatedSessionController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/AuthenticatedSessionController.php',
         'App\\Http\\Controllers\\Auth\\ConfirmablePasswordController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/ConfirmablePasswordController.php',
         'App\\Http\\Controllers\\Auth\\EmailVerificationNotificationController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/EmailVerificationNotificationController.php',
@@ -615,6 +617,7 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
         'App\\Models\\Product' => __DIR__ . '/../..' . '/app/Models/Product.php',
         'App\\Models\\StatusHistory' => __DIR__ . '/../..' . '/app/Models/StatusHistory.php',
         'App\\Models\\User' => __DIR__ . '/../..' . '/app/Models/User.php',
+        'App\\Policies\\ItemPolicy' => __DIR__ . '/../..' . '/app/Policies/ItemPolicy.php',
         'App\\Providers\\AppServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AppServiceProvider.php',
         'App\\View\\Components\\AppLayout' => __DIR__ . '/../..' . '/app/View/Components/AppLayout.php',
         'App\\View\\Components\\GuestLayout' => __DIR__ . '/../..' . '/app/View/Components/GuestLayout.php',

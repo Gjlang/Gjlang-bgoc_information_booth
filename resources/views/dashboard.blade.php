@@ -1,7 +1,7 @@
 @extends('layouts.app')
-
 @section('head')
-@vite(['resources/css/app.css', 'resources/css/dashboard.css', 'resources/js/app.js'])
+
+@vite(['resources/css/app.css', 'resources/js/app.js'])
 <title>Outstanding Matters</title>
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -9,10 +9,276 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css">
+
+{{-- OVERDUE ROW STYLING - MUST BE LAST TO OVERRIDE EVERYTHING --}}
+<style>
+
+/* ===== EXISTING STYLES ===== */
+.th-2line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+  gap: 2px;
+}
+
+.th-2line .top {
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
+.th-2line .sub {
+  font-size: 0.75em;
+  opacity: 0.8;
+}
+
+/* 🔴 SECTION HEADERS IN PREVIEW - UPDATED: LEFT ALIGN + RED TEXT */
+#previewTable .section-header-row {
+  background: linear-gradient(135deg, #b4c7e7 0%, #8fa9d4 100%) !important;
+  border-bottom: 2px solid #6b8dc7 !important;
+}
+
+#previewTable .section-header-cell {
+  padding: 12px 16px !important;
+  text-align: left !important;  /* 🔴 CHANGED: CENTER → LEFT */
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  color: #dc2626 !important;  /* 🔴 CHANGED: #1f4e78 (blue) → #dc2626 (red) */
+}
+
+/* Revert button styling */
+.btnRevert {
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.btnRevert:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btnRevert:active {
+  transform: translateY(0);
+}
+
+/* Modal backdrop styling */
+#previewModal, #completedModal {
+  backdrop-filter: blur(4px);
+}
+
+/* Hairline border utility */
+.hairline {
+  border-width: 1px;
+  border-color: #e5e7eb;
+}
+
+/* Table hover effect */
+#previewTable tbody tr:hover,
+#completedTable tbody tr:hover {
+  background-color: #f9fafb !important;
+  transition: background-color 0.15s ease;
+}
+
+/* Red deadline for expired */
+.text-red-deadline {
+  color: #dc2626 !important;
+  font-weight: 600 !important;
+}
+/* Modal backdrop styling */
+#previewModal, #completedModal {
+  backdrop-filter: blur(4px);
+}
+
+/* Hairline border utility */
+.hairline {
+  border-width: 1px;
+  border-color: #e5e7eb;
+}
+
+/* Table hover effect */
+#previewTable tbody tr:hover,
+#completedTable tbody tr:hover {
+  background-color: #f9fafb !important;
+  transition: background-color 0.15s ease;
+}
+
+/* Red deadline for expired */
+.text-red-deadline {
+  color: #dc2626 !important;
+  font-weight: 600 !important;
+}
+/* OVERDUE ROW - CRITICAL FINAL OVERRIDE */
+/* === Layout tabel & kolom === */
+/* === Force fixed layout === */
+.data-table {
+  table-layout: fixed !important;
+  width: 100%;
+}
+
+/* === Date In (1) & Deadline (2) - Compact date columns === */
+.data-table thead th:nth-child(1),
+.data-table tbody td:nth-child(1),
+.data-table thead th:nth-child(2),
+.data-table tbody td:nth-child(2) {
+  width: 70px !important;
+  max-width: 70px !important;
+  min-width: 70px !important;
+  text-align: center;
+  white-space: nowrap;
+  padding: 4px 2px;
+  font-size: 0.9em;
+}
+
+/* === Assign By (3) & Assign To (4) - Narrow name columns === */
+.data-table thead th:nth-child(3),
+.data-table tbody td:nth-child(3),
+.data-table thead th:nth-child(4),
+.data-table tbody td:nth-child(4) {
+  width: 70px !important;
+  max-width: 70px !important;
+  min-width: 70px !important;
+  text-align: center;
+  white-space: nowrap;
+  padding: 4px 2px;
+  font-size: 0.9em;
+}
+
+/* Two-line header styling for ASSIGN columns */
+.th-2line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  gap: 1px;
+  padding: 2px;
+}
+
+.th-2line .top {
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
+.th-2line .sub {
+  font-size: 0.75em;
+  opacity: 0.8;
+}
+
+/* === Company (5) - Medium width === */
+.data-table thead th:nth-child(5),
+.data-table tbody td:nth-child(5) {
+  width: 130px !important;
+  max-width: 130px !important;
+  min-width: 130px !important;
+  padding: 6px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* === PIC (6) - Small and centered === */
+.data-table thead th:nth-child(6),
+.data-table tbody td:nth-child(6) {
+  width: 90px !important;
+  max-width: 90px !important;
+  min-width: 90px !important;
+  text-align: center;
+  white-space: nowrap;
+  padding: 6px;
+}
+
+/* === Product (7) - Medium width === */
+.data-table thead th:nth-child(7),
+.data-table tbody td:nth-child(7) {
+  width: 130px !important;
+  max-width: 130px !important;
+  min-width: 130px !important;
+  padding: 6px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* === Task (8) - Wider with ellipsis === */
+.data-table thead th:nth-child(8),
+.data-table tbody td:nth-child(8) {
+  width: 190px !important;
+  max-width: 190px !important;
+  min-width: 190px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 6px 8px;
+}
+
+/* === Remarks (9) - Wider with ellipsis === */
+.data-table thead th:nth-child(9),
+.data-table tbody td:nth-child(9) {
+  width: 210px !important;
+  max-width: 210px !important;
+  min-width: 210px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 6px 8px;
+}
+
+/* === Int/Client (10) & Status (11) - Small and centered === */
+.data-table thead th:nth-child(10),
+.data-table tbody td:nth-child(10),
+.data-table thead th:nth-child(11),
+.data-table tbody td:nth-child(11) {
+  width: 100px !important;
+  max-width: 100px !important;
+  min-width: 100px !important;
+  text-align: center;
+  white-space: nowrap;
+  padding: 6px;
+}
+
+/* === Action (12) - Small and centered === */
+.data-table thead th:nth-child(12),
+.data-table tbody td:nth-child(12) {
+  width: 80px !important;
+  max-width: 80px !important;
+  min-width: 80px !important;
+  text-align: center;
+  white-space: nowrap;
+  padding: 6px;
+}
+
+/* === General table styling for readability === */
+.data-table thead th {
+  font-weight: 600;
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  padding: 6px 4px;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.data-table tbody td {
+  border-bottom: 1px solid #e9ecef;
+  vertical-align: middle;
+  padding: 6px 4px;
+  font-size: 0.9em;
+}
+
+/* Optional: Add hover effect for better UX */
+.data-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+</style>
+
 @endsection
 
 @section('content')
-<div class="dashboard-wrapper">
+<div class="dashboard-wrapper page-dashboard">
   <div class="bg-gradient-animated"></div>
   <div class="particles">
     <div class="particle"></div>
@@ -42,7 +308,31 @@
               Export Excel
             </span>
           </button>
+
+          <button
+  id="btnPreviewTables"
+  type="button"
+  class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border hairline bg-white hover:bg-neutral-50 text-neutral-800"
+>
+  <!-- eye icon (heroicons outline) -->
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+      d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12s-3.75 6.75-9.75 6.75S2.25 12 2.25 12z" />
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+  </svg>
+  Preview Tables
+</button>
+
+<button id="btnCompletedTasks" type="button" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border hairline bg-emerald-50 hover:bg-emerald-100 text-emerald-700">
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+  Completed Tasks
+</button>
         @endcan
+
+
 
         @can('create', \App\Models\Item::class)
           <button id="btnCreate" type="button" class="btn btn-primary magnetic">
@@ -101,7 +391,7 @@
           <select id="f_type_label" class="form-select">
             <option value="">All</option>
             @foreach($distinct['type_labels'] as $v)
-              <option value="{{ $v }}">{{ $v }}</option>
+              <option value="{{ $v }}">{{ strtoupper($v) === 'INTERNAL' ? 'INT' : $v }}</option>
             @endforeach
           </select>
         </div>
@@ -136,10 +426,18 @@
           <label class="form-label">Status</label>
           <select id="f_status" class="form-select">
             <option value="">All</option>
-            @foreach($distinct['statuses'] as $v)
-              <option value="{{ $v }}">{{ $v }}</option>
+            @php
+                $statuses = collect($distinct['statuses'] ?? [])
+                ->map(fn($s) => (string)$s)
+                ->unique()
+                ->values();
+
+                if (!$statuses->contains('Expired')) { $statuses->push('Expired'); }
+            @endphp
+            @foreach($statuses as $v)
+                <option value="{{ $v }}">{{ $v }}</option>
             @endforeach
-          </select>
+            </select>
         </div>
         <div class="filter-actions animate-fade-in" style="animation-delay: 0.4s;">
           <button id="btnApply" class="btn btn-primary btn-filter magnetic">Apply</button>
@@ -159,7 +457,7 @@
         </h2>
         <div class="table-meta">
           <span class="pulse-dot"></span>
-          Auto-rotates 7 rows every 5s • Auto-refresh 30s
+          Auto-rotates 7 rows every 8s •
         </div>
       </div>
 
@@ -168,24 +466,108 @@
           <thead>
             <tr>
               <th><span class="th-content">Date In</span></th>
-              <th><span class="th-content">Deadline</span></th>
-              <th><span class="th-content">Assign By</span></th>
-              <th><span class="th-content">Assign To</span></th>
-              <th><span class="th-content">Internal/Client</span></th>
-              <th><span class="th-content">Company</span></th>
-              <th><span class="th-content">Task</span></th>
-              <th><span class="th-content">PIC</span></th>
-              <th><span class="th-content">Product</span></th>
-              <th><span class="th-content">Status</span></th>
-              <th><span class="th-content">Remarks</span></th>
-              <th><span class="th-content">Action</span></th>
+<th><span class="th-content">Deadline</span></th>
+<th>
+  <span class="th-content">
+    <span class="th-2line">
+      <span class="top">ASSIGN</span>
+      <span class="sub">BY</span>
+    </span>
+  </span>
+</th>
+<th>
+  <span class="th-content">
+    <span class="th-2line">
+      <span class="top">ASSIGN</span>
+      <span class="sub">TO</span>
+    </span>
+  </span>
+</th>
+
+<th><span class="th-content">Company</span></th>
+<th><span class="th-content">PIC</span></th>
+<th><span class="th-content">Product</span></th>
+<th><span class="th-content">Task</span></th>
+<th><span class="th-content">Remarks</span></th>
+<th><span class="th-content">Int/Client</span></th>
+<th><span class="th-content">Status</span></th>
+<th><span class="th-content">Action</span></th>
+
             </tr>
           </thead>
           <tbody id="rows"></tbody>
         </table>
       </div>
+
+      <div id="tableInfo" class="text-xs text-neutral-500 mt-2 px-4 py-2" style="background: rgba(255,255,255,0.5); border-top: 1px solid rgba(229,231,235,0.5);"></div>
     </div>
   </div>
+
+  <!-- Completed Tasks Modal -->
+<div id="completedModal" class="fixed inset-0 z-[999] hidden">
+  <!-- Backdrop -->
+  <div class="absolute inset-0 bg-black/40"></div>
+
+  <!-- Dialog -->
+  <div class="relative mx-auto my-8 w-[95vw] max-w-7xl bg-white rounded-2xl shadow-xl">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-4 border-b hairline">
+      <h3 class="text-lg font-semibold text-neutral-900">✅ Completed Tasks</h3>
+      <button id="completedClose" class="p-2 rounded-lg hover:bg-neutral-100" aria-label="Close">✕</button>
+    </div>
+
+    <!-- Body -->
+    <div class="px-6 py-5">
+      <!-- Summary -->
+      <div class="flex items-center gap-3 mb-4">
+        <span id="completedCount" class="px-3 py-1 rounded-full border hairline bg-emerald-50 text-emerald-700 text-sm font-medium">
+          0 completed
+        </span>
+      </div>
+
+      <!-- Table Container -->
+      <div class="overflow-auto max-h-[65vh]">
+        <table class="min-w-full border hairline rounded-xl" id="completedTable">
+          <thead class="bg-neutral-50 text-neutral-700 text-sm sticky top-0">
+            <tr id="completedHeadRow">
+              <!-- Populated by JS -->
+            </tr>
+          </thead>
+          <tbody id="completedBody" class="text-sm text-neutral-900">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+        <div id="completedEmpty" class="hidden py-16 text-center text-neutral-500">
+          No completed tasks found.
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div id="completedPagination" class="flex items-center justify-between mt-4 pt-4 border-t hairline">
+        <div class="text-xs text-neutral-500">
+          Showing <span id="completedShowingStart">0</span>-<span id="completedShowingEnd">0</span> of <span id="completedTotal">0</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="completedPrevPage" class="px-3 py-1 rounded-lg border hairline hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm">
+            Previous
+          </button>
+          <span id="completedPageInfo" class="text-sm text-neutral-600">Page 1</span>
+          <button id="completedNextPage" class="px-3 py-1 rounded-lg border hairline hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm">
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="flex items-center justify-between gap-3 px-6 py-4 border-t hairline">
+      <div class="text-xs text-neutral-500">
+        Read-only view • Export via main Export button
+      </div>
+      <button id="completedClose2" class="px-4 py-2 rounded-xl border hairline bg-white hover:bg-neutral-50">Close</button>
+    </div>
+  </div>
+</div>
 
   {{-- Calendar --}}
   <div class="card">
@@ -195,6 +577,9 @@
           <span class="section-icon">📅</span>
           Calendar (Deadlines)
         </h2>
+        <button id="printCalBtn" type="button" class="btn btn-secondary">
+            Print Calendar
+        </button>
       </div>
       <div class="calendar-wrapper">
         <div id="calendar"></div>
@@ -279,7 +664,7 @@
           <label class="modal-form-label">Internal/Client</label>
           <select name="type_label" class="modal-form-select">
             <option value="">Select Type</option>
-            <option value="INTERNAL">INTERNAL</option>
+            <option value="INTERNAL">INT</option>
             <option value="CLIENT">CLIENT</option>
           </select>
         </div>
@@ -306,6 +691,7 @@
             <option value="Pending">Pending</option>
             <option value="In Progress">In Progress</option>
             <option value="Completed">Completed</option>
+            <option value="Expired">Expired</option>
           </select>
         </div>
         <div class="modal-form-group full-width">
@@ -361,7 +747,7 @@
           <label class="modal-form-label">Internal/Client</label>
           <select name="type_label" class="modal-form-select">
             <option value="">Select Type</option>
-            <option value="INTERNAL">INTERNAL</option>
+            <option value="INTERNAL">INT</option>
             <option value="CLIENT">CLIENT</option>
           </select>
         </div>
@@ -388,6 +774,8 @@
             <option value="Pending">Pending</option>
             <option value="In Progress">In Progress</option>
             <option value="Completed">Completed</option>
+            <option value="Expired">Expired</option>
+
           </select>
         </div>
         <div class="modal-form-group full-width">
@@ -425,24 +813,667 @@
     <div id="detailBody" class="detail-grid"></div>
   </div>
 </div>
+
+<!-- ADD: Preview Tables Modal -->
+<div id="previewModal" class="fixed inset-0 z-[999] hidden">
+  <!-- Backdrop -->
+  <div class="absolute inset-0 bg-black/40"></div>
+
+  <!-- Dialog -->
+  <div class="relative mx-auto my-8 w-[95vw] max-w-7xl bg-white rounded-2xl shadow-xl">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-4 border-b hairline">
+      <h3 class="text-lg font-semibold text-neutral-900">Preview Tables (Before Export)</h3>
+      <button id="previewClose" class="p-2 rounded-lg hover:bg-neutral-100" aria-label="Close preview">✕</button>
+    </div>
+
+    <!-- Body -->
+    <div class="px-6 py-5">
+      <!-- Summary chips -->
+      <div id="previewSummary" class="flex flex-wrap gap-2 mb-4"></div>
+
+      <!-- Scroll container -->
+      <div class="overflow-auto max-h-[70vh]">
+        <table class="min-w-full border hairline rounded-xl" id="previewTable">
+          <thead class="bg-neutral-50 text-neutral-700 text-sm">
+            <tr id="previewHeadRow">
+              <!-- Populated by JS -->
+            </tr>
+          </thead>
+          <tbody id="previewBody" class="text-sm text-neutral-900">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+        <div id="previewEmpty" class="hidden py-16 text-center text-neutral-500">
+          No data for current filters.
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="flex items-center justify-between gap-3 px-6 py-4 border-t hairline">
+      <div class="text-xs text-neutral-500">
+        This preview mirrors your current filters. Use Export to download.
+      </div>
+      <div class="flex items-center gap-2">
+        <!-- Optional: quick jump to Export -->
+        <a href="{{ route('dashboard.items.export') }}" class="px-4 py-2 rounded-xl bg-[#22255b] text-white hover:opacity-90">
+          Go to Export
+        </a>
+        <button id="previewClose2" class="px-4 py-2 rounded-xl border hairline bg-white hover:bg-neutral-50">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 @endsection
 
 @section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
 
 <script>
+
+
+// ===== COMPLETED TASKS MODAL =====
+let completedData = [];
+let completedPage = 1;
+const COMPLETED_PER_PAGE = 20;
+
+function openCompletedModal() {
+  document.getElementById('completedModal')?.classList.remove('hidden');
+}
+
+function closeCompletedModal() {
+  document.getElementById('completedModal')?.classList.add('hidden');
+}
+
+// ===== COMPLETED TASKS MODAL WITH REVERT =====
+function renderCompletedTable(page = 1) {
+  const head = document.getElementById('completedHeadRow');
+  const body = document.getElementById('completedBody');
+  const empty = document.getElementById('completedEmpty');
+  if (!head || !body) return;
+
+  const esc = s => {
+    if (s === null || s === undefined) return '';
+    return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+  };
+
+  const columns = [
+    { key: 'date_in',      label: 'Date In',  format: 'date' },
+    { key: 'deadline',     label: 'Deadline', format: 'date' },
+    { key: 'assign_by_id', label: 'Assign By' },
+    { key: 'assign_to_id', label: 'Assign To' },
+    { key: 'company_name', label: 'Company', render: r => (r.company_name ?? r.company_id ?? '') },
+    { key: 'pic_name',     label: 'PIC' },
+    { key: 'product_name', label: 'Product', render: r => (r.product_name ?? r.product_id ?? '') },
+    { key: 'task',         label: 'Task' },
+    { key: 'remarks',      label: 'Remarks' },
+    { key: 'type_label',   label: 'Int/Client', render: r => uiTypeLabel(r.type_label) },
+    { key: 'action',       label: 'Action' }, // 🔴 NEW: Action column
+  ];
+
+  // Head
+  if (!head.children.length) {
+    head.innerHTML = columns
+      .map(c => `<th class="px-3 py-2 text-left font-semibold border-b hairline">${esc(c.label)}</th>`)
+      .join('');
+  }
+
+  // Empty check
+  if (!completedData || completedData.length === 0) {
+    body.innerHTML = '';
+    empty?.classList.remove('hidden');
+    document.getElementById('completedCount').textContent = '0 completed';
+    document.getElementById('completedPagination').style.display = 'none';
+    return;
+  }
+  empty?.classList.add('hidden');
+
+  // Pagination
+  const total = completedData.length;
+  const totalPages = Math.ceil(total / COMPLETED_PER_PAGE);
+  const start = (page - 1) * COMPLETED_PER_PAGE;
+  const end = Math.min(start + COMPLETED_PER_PAGE, total);
+  const pageData = completedData.slice(start, end);
+
+  // Update count
+  document.getElementById('completedCount').textContent = `${total} completed`;
+  document.getElementById('completedTotal').textContent = total;
+  document.getElementById('completedShowingStart').textContent = start + 1;
+  document.getElementById('completedShowingEnd').textContent = end;
+  document.getElementById('completedPageInfo').textContent = `Page ${page} of ${totalPages}`;
+  document.getElementById('completedPagination').style.display = 'flex';
+
+  // Enable/disable pagination buttons
+  document.getElementById('completedPrevPage').disabled = (page === 1);
+  document.getElementById('completedNextPage').disabled = (page === totalPages);
+
+  // Render rows
+  const tr = pageData.map(r => {
+    const tds = columns.map(c => {
+      if (c.key === 'action') {
+        // 🔴 REVERT BUTTON (only if user can update)
+        if (r.can_update) {
+          return `<td class="px-3 py-2 border-b hairline">
+            <button
+              class="btnRevert px-3 py-1 text-sm rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200"
+              data-id="${r.id}"
+            >
+              ↩️ Revert
+            </button>
+          </td>`;
+        } else {
+          return `<td class="px-3 py-2 border-b hairline text-neutral-400">-</td>`;
+        }
+      }
+
+      let val = (typeof c.render === 'function') ? c.render(r) : r[c.key];
+      if (c.format === 'date' && typeof window.fmt === 'function') {
+        val = window.fmt(val);
+      }
+      return `<td class="px-3 py-2 border-b hairline align-top">${esc(val)}</td>`;
+    }).join('');
+    return `<tr class="hover:bg-neutral-50">${tds}</tr>`;
+  }).join('');
+
+  body.innerHTML = tr;
+
+  // 🔴 WIRE REVERT BUTTONS
+  document.querySelectorAll('.btnRevert').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const id = this.dataset.id;
+      if (!confirm('Revert this task back to In Progress?')) return;
+
+      try {
+        const CSRF = document.querySelector('meta[name="csrf-token"]')?.content;
+        const res = await fetch(`{{ route('dashboard.items.update', ['id' => '__ID__']) }}`.replace('__ID__', id), {
+          method: 'PATCH',
+          headers: {
+            'X-CSRF-TOKEN': CSRF,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ status: 'In Progress' })
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        alert('Task reverted to In Progress!');
+
+        // Reload completed tasks
+        await loadCompletedTasks();
+
+        // Refresh main table
+        if (typeof fetchData === 'function') {
+          await fetchData();
+        }
+      } catch (err) {
+        console.error('Revert failed:', err);
+        alert('Failed to revert task. See console.');
+      }
+    });
+  });
+}
+
+async function loadCompletedTasks() {
+  try {
+    // Fetch ALL items (no filter) with status=Completed
+    const params = new URLSearchParams({ status: 'Completed' });
+    const url = `{{ route('dashboard.items.list') }}?${params}`;
+    const CSRF = document.querySelector('meta[name="csrf-token"]')?.content;
+
+    const res = await fetch(url, { headers: { 'X-CSRF-TOKEN': CSRF } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const payload = await res.json();
+    completedData = Array.isArray(payload) ? payload : (payload.data || []);
+
+    // Sort newest first
+    completedData.sort((a, b) => {
+      const dateA = new Date(a.updated_at || a.created_at || 0);
+      const dateB = new Date(b.updated_at || b.created_at || 0);
+      return dateB - dateA;
+    });
+
+    completedPage = 1;
+    renderCompletedTable(completedPage);
+    openCompletedModal();
+  } catch (e) {
+    console.error('Failed to load completed tasks:', e);
+    alert('Failed to load completed tasks. See console.');
+  }
+}
+
+// Wire up events
+document.getElementById('btnCompletedTasks')?.addEventListener('click', () => {
+  loadCompletedTasks();
+});
+
+document.getElementById('completedClose')?.addEventListener('click', closeCompletedModal);
+document.getElementById('completedClose2')?.addEventListener('click', closeCompletedModal);
+
+document.getElementById('completedPrevPage')?.addEventListener('click', () => {
+  if (completedPage > 1) {
+    completedPage--;
+    renderCompletedTable(completedPage);
+  }
+});
+
+document.getElementById('completedNextPage')?.addEventListener('click', () => {
+  const totalPages = Math.ceil(completedData.length / COMPLETED_PER_PAGE);
+  if (completedPage < totalPages) {
+    completedPage++;
+    renderCompletedTable(completedPage);
+  }
+});
+
+document.getElementById('completedModal')?.addEventListener('click', (ev) => {
+  if (ev.target?.id === 'completedModal') closeCompletedModal();
+});
+
+let allData = [];
+let windowStart = 0;
+const WINDOW_SIZE = 7;
+
+function hasAnyFilter(){
+  return [
+      '#f_date_in_from','#f_assign_by_id','#f_assign_to_id','#f_type_label',
+      '#f_company_id','#f_pic_name','#f_product_id','#f_status','#f_q'
+  ].some(sel => $(sel).val());
+}
+
+function uiTypeLabel(v){
+  if (!v) return '-';
+  return String(v).trim().toUpperCase() === 'INTERNAL' ? 'INT' : v;
+}
+window.uiTypeLabel = uiTypeLabel;
+
+
+function fmt(d){
+  if (!d) return '-';
+  if (typeof d === 'string') {
+    const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) {
+      const yy = m[1].slice(-2);
+      const mm = m[2];
+      const dd = m[3];
+      return `${dd}/${mm}/${yy}`;
+    }
+  }
+  const dt = new Date(d);
+  if (Number.isNaN(dt.getTime())) return d;
+  const dd = String(dt.getDate()).padStart(2,'0');
+  const mm = String(dt.getMonth()+1).padStart(2,'0');
+  const yy = String(dt.getFullYear()).slice(-2);
+  return `${dd}/${mm}/${yy}`;
+}
+
+function updateTableCounter(visibleCount = 0){
+  const el = document.getElementById('tableInfo');
+  if (!el) return;
+
+  const total = allData.length;
+  const showing = visibleCount;
+   console.log('DEBUG Counter:', { showing, total, allData });
+
+  let range = '';
+  if (!hasAnyFilter() && total > 0){  // ✅ Now accessible
+    const start = windowStart + 1;
+    const end = Math.min(windowStart + visibleCount, total);
+    range = ` • Rows ${start}-${end}`;
+  }
+
+  el.textContent = `Showing ${showing} of ${total} item(s)` + range;
+}
+
+
+
+// === PREVIEW TABLES (Before Export) =================================
+
+function getCurrentFilterParams() {
+  // Prefer the one defined later inside $(function){...}
+  if (typeof window.getFilters === 'function') {
+    return new URLSearchParams(window.getFilters()).toString();
+  }
+
+  // Fallback: read inputs directly matching your table columns
+  const filterParams = {
+    date_in_from:  document.querySelector('#f_date_in_from')?.value || '',
+    deadline_from: document.querySelector('#f_deadline_from')?.value || '',
+    assign_by_id:  document.querySelector('#f_assign_by_id')?.value || '',
+    assign_to_id:  document.querySelector('#f_assign_to_id')?.value || '',
+    company_id:    document.querySelector('#f_company_id')?.value || '',
+    pic_name:      document.querySelector('#f_pic_name')?.value || '',
+    product_id:    document.querySelector('#f_product_id')?.value || '',
+    task:          document.querySelector('#f_task')?.value || '',
+    remarks:       document.querySelector('#f_remarks')?.value || '',
+    type_label:    document.querySelector('#f_type_label')?.value || '', // Int/Client
+    status:        document.querySelector('#f_status')?.value || '',
+  };
+
+  return new URLSearchParams(filterParams).toString();
+}
+
+// (2) Open/Close modal helpers
+function openPreviewModal() {
+  document.getElementById('previewModal')?.classList.remove('hidden');
+}
+function closePreviewModal() {
+  document.getElementById('previewModal')?.classList.add('hidden');
+}
+
+// (3) Render helpers
+function renderSummaryChips(rows) {
+  const wrap = document.getElementById('previewSummary');
+  if (!wrap) return;
+
+  // simple counts by status
+  const counts = rows.reduce((acc, r) => {
+    const s = (r.status || '').toString();
+    acc[s] = (acc[s] || 0) + 1;
+    return acc;
+  }, {});
+
+  wrap.innerHTML = '';
+  const total = rows.length;
+  const chip = (label, value) => `
+    <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full border hairline bg-white">
+      <span class="text-xs text-neutral-500">${label}</span>
+      <span class="text-sm font-medium text-neutral-900">${value}</span>
+    </span>`;
+
+  wrap.insertAdjacentHTML('beforeend', chip('Total', total));
+  Object.keys(counts).sort().forEach(k => {
+    wrap.insertAdjacentHTML('beforeend', chip(k || '(no status)', counts[k]));
+  });
+}
+
+// ===== PREVIEW TABLES WITH SECTIONS =====
+// ===== PREVIEW TABLES WITH SECTIONS =====
+function renderPreviewTable(rows) {
+  const head = document.getElementById('previewHeadRow');
+  const body = document.getElementById('previewBody');
+  const empty = document.getElementById('previewEmpty');
+  if (!head || !body) return;
+
+  const esc = s => {
+    if (s === null || s === undefined) return '';
+    return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+  };
+
+  const columns = [
+    { key: 'date_in',      label: 'Date In',  format: 'date' },
+    { key: 'deadline',     label: 'Deadline', format: 'date' },
+    { key: 'assign_by_id', labelHtml: '<span class="th-2line"><span class="top">ASSIGN</span><span class="sub">BY</span></span>' },
+    { key: 'assign_to_id', labelHtml: '<span class="th-2line"><span class="top">ASSIGN</span><span class="sub">TO</span></span>' },
+    { key: 'company_name', label: 'Company', render: r => (r.company_name ?? r.company_id ?? '') },
+    { key: 'pic_name',     label: 'PIC' },
+    { key: 'product_name', label: 'Product', render: r => (r.product_name ?? r.product_id ?? '') },
+    { key: 'task',         label: 'Task' },
+    { key: 'remarks',      label: 'Remarks' },
+    { key: 'type_label',   label: 'Int/Client', render: r => uiTypeLabel(r.type_label) },
+    { key: 'status',       label: 'Status' },
+  ];
+
+  // Head
+  head.innerHTML = columns
+    .map(c => {
+      const headerContent = c.labelHtml || esc(c.label || '');
+      return `<th class="px-3 py-2 text-left font-semibold border-b hairline">${headerContent}</th>`;
+    })
+    .join('');
+
+  // Empty state
+  if (!rows || rows.length === 0) {
+    body.innerHTML = '';
+    empty?.classList.remove('hidden');
+    return;
+  }
+  empty?.classList.add('hidden');
+
+  // 🔴 GROUP BY STATUS (same order as export)
+  const statusOrder = ['Expired', 'Pending', 'In Progress', 'Completed'];
+
+  // Group items by status
+  const grouped = {};
+  statusOrder.forEach(status => {
+    grouped[status] = rows.filter(r => {
+      const s = (r.status || '').trim();
+      return s.toLowerCase() === status.toLowerCase();
+    }).sort((a, b) => {
+      // Sort by deadline (earliest first)
+      const dateA = a.deadline ? new Date(a.deadline).getTime() : Infinity;
+      const dateB = b.deadline ? new Date(b.deadline).getTime() : Infinity;
+      return dateA - dateB;
+    });
+  });
+
+  // 🔴 RENDER SECTIONS WITH PROPER CLASSES
+  let html = '';
+  statusOrder.forEach(status => {
+    const items = grouped[status];
+    if (items && items.length > 0) {
+      // Section header - USE THE CSS CLASSES
+      html += `
+        <tr class="section-header-row">
+          <td colspan="${columns.length}" class="section-header-cell">
+            ${status}
+          </td>
+        </tr>
+      `;
+
+      // Items in this section
+      items.forEach(r => {
+        const tds = columns.map(c => {
+          let val = (typeof c.render === 'function') ? c.render(r) : r[c.key];
+          if (c.format === 'date' && typeof window.fmt === 'function') {
+            val = window.fmt(val);
+          }
+
+          // Red deadline for Expired
+          let cellClass = 'px-3 py-2 border-b hairline align-top';
+          if (c.key === 'deadline' && status === 'Expired') {
+            cellClass += ' text-red-deadline';
+          }
+
+          return `<td class="${cellClass}">${esc(val)}</td>`;
+        }).join('');
+
+        html += `<tr class="hover:bg-neutral-50">${tds}</tr>`;
+      });
+    }
+  });
+
+  body.innerHTML = html;
+}
+// (4) Fetch data from your existing list endpoint and show modal
+async function loadPreviewAndOpen() {
+  const params = getCurrentFilterParams();
+  // IMPORTANT: the route below exists in your app list (GET dashboard/items/list)
+  const url = `{{ route('dashboard.items.list') }}?${params}`;
+  const CSRF = document.querySelector('meta[name="csrf-token"]')?.content;
+
+  const res = await fetch(url, { headers: { 'X-CSRF-TOKEN': CSRF } });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const payload = await res.json();
+
+  // Normalize: some apps put data in payload.data; others return array directly
+  const rows = Array.isArray(payload) ? payload : (payload.data || payload.items || []);
+  renderSummaryChips(rows);
+  renderPreviewTable(rows);
+  openPreviewModal();
+}
+
+// (5) Wire events
+document.getElementById('btnPreviewTables')?.addEventListener('click', async () => {
+  try {
+    // Optional: show a tiny loading state (you can enhance with a spinner)
+    document.getElementById('btnPreviewTables').disabled = true;
+    await loadPreviewAndOpen();
+  } catch (e) {
+    console.error('Preview error:', e);
+    alert('Failed to load preview. See console for details.');
+  } finally {
+    document.getElementById('btnPreviewTables').disabled = false;
+  }
+});
+
+document.getElementById('previewClose')?.addEventListener('click', closePreviewModal);
+document.getElementById('previewClose2')?.addEventListener('click', closePreviewModal);
+// Close when clicking backdrop
+document.getElementById('previewModal')?.addEventListener('click', (ev) => {
+  if (ev.target?.id === 'previewModal') closePreviewModal();
+});
+
+// ====================================================================
+
+// ---- CAPTURE MODE: rapihin halaman sebelum snapshot ----
+function withCaptureMode(run) {
+  // sisipkan style sementara
+  const style = document.createElement('style');
+  style.id = 'captureStyles';
+  style.textContent = `
+    body.capture-mode { background:#fff !important; }
+    body.capture-mode .bg-gradient-animated,
+    body.capture-mode .particles,
+    body.capture-mode .toolbar,
+    body.capture-mode .card .table-section,
+    body.capture-mode .card .filter-panel { display:none !important; }
+
+    body.capture-mode .calendar-section { box-shadow:none !important; }
+    body.capture-mode .calendar-wrapper { padding:0 !important; margin:0 !important; }
+    body.capture-mode #calendar { background:#fff !important; }
+    body.capture-mode .fc { font-size:12px !important; } /* sedikit lebih rapat */
+    body.capture-mode .fc-scrollgrid,
+    body.capture-mode .fc-scrollgrid-section { box-shadow:none !important; overflow:visible !important; }
+  `;
+  document.head.appendChild(style);
+  document.body.classList.add('capture-mode');
+
+  // pastikan font sudah siap supaya tidak berubah saat render
+  const fontsReady = ('fonts' in document && document.fonts?.ready) ? document.fonts.ready : Promise.resolve();
+
+  return fontsReady.then(run).finally(() => {
+    document.body.classList.remove('capture-mode');
+    style.remove();
+  });
+}
+
+// ---- TANGKAP KALENDER DENGAN SKALA TINGGI ----
+async function captureCalendarCanvas() {
+  const el = document.getElementById('calendar');
+  if (!el) throw new Error('#calendar not found');
+
+  // paksa kalender resize biar lebarnya maksimal
+  if (window.calendar?.updateSize) window.calendar.updateSize();
+
+  // pakai ukuran scroll sebenarnya + scale tinggi untuk ketajaman
+  const canvas = await html2canvas(el, {
+    scale: 3,                // <= naikin kalau masih kurang tajam (maks 4)
+    useCORS: true,
+    backgroundColor: '#ffffff',
+    width: el.scrollWidth,
+    height: el.scrollHeight,
+    scrollX: 0,
+    scrollY: 0
+  });
+  return canvas;
+}
+
+function currentCalLabel() {
+  try {
+    const d = (window.calendar && window.calendar.getDate()) ? window.calendar.getDate() : new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    return `${y}${m}`;
+  } catch { return ''; }
+}
+
+// ---- DOWNLOAD PDF ----
+async function downloadCalendarPDF() {
+  await withCaptureMode(async () => {
+    const canvas = await captureCalendarCanvas();
+    const imgData = canvas.toDataURL('image/png');
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+
+    // skala proporsional ke lebar halaman
+    const imgWpx = canvas.width;
+    const imgHpx = canvas.height;
+    const ratio  = imgHpx / imgWpx;
+
+    let w = pageW, h = w * ratio, x = 0, y = 0;
+
+    // kalau tinggi melebihi halaman, skala berdasar tinggi
+    if (h > pageH) {
+      h = pageH;
+      w = h / ratio;
+      x = (pageW - w) / 2;
+    } else {
+      y = (pageH - h) / 2; // center vertical
+    }
+
+    pdf.addImage(imgData, 'PNG', x, y, w, h, undefined, 'FAST');
+    pdf.save(`calendar-${currentCalLabel()}.pdf`);
+  });
+}
+
+// ---- DOWNLOAD PNG ----
+async function downloadCalendarPNG() {
+  await withCaptureMode(async () => {
+    const canvas = await captureCalendarCanvas();
+    const link = document.createElement('a');
+    link.href = canvas.toDataURL('image/png');
+    link.download = `calendar-${currentCalLabel()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  });
+}
+
+// Tombol yang kamu punya (kalau pakai 1 tombol saja)
+document.getElementById('printCalBtn')?.addEventListener('click', () => {
+  downloadCalendarPDF().catch(err => {
+    console.error(err);
+    alert('Failed to generate PDF.');
+  });
+});
+
+
+// Wire up buttons
+document.addEventListener('click', function(e){
+  if (e.target && e.target.id === 'dlPdfBtn') {
+    downloadCalendarPDF().catch(err => {
+      console.error(err); alert('Failed to generate PDF.');
+    });
+  }
+  if (e.target && e.target.id === 'dlPngBtn') {
+    downloadCalendarPNG().catch(err => {
+      console.error(err); alert('Failed to generate PNG.');
+    });
+  }
+});
+
+
 $(function(){
   try {
     const CSRF = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-    let allData = [];
-    let windowStart = 0;
-    const WINDOW_SIZE = 7;
+
     let rotateTimer = null;
     let refreshTimer = null;
     let calendar = null;
     let currentDetailData = null;
+    let silentRefresh = false;
 
     // Magnetic button effect
     document.querySelectorAll('.magnetic').forEach(btn => {
@@ -482,6 +1513,32 @@ $(function(){
     new TomSelect('#f_product_id',   tsBrowseSearch);
     new TomSelect('#f_status',       tsBrowseSearch);
 
+     $('#f_date_in_from').on('change', function() {
+      console.log('Date changed, auto-filtering...');
+      fetchData();
+    });
+
+    // TomSelect dropdowns auto-filter
+    const filterSelectors = [
+      '#f_assign_by_id',
+      '#f_assign_to_id',
+      '#f_type_label',
+      '#f_company_id',
+      '#f_pic_name',
+      '#f_product_id',
+      '#f_status'
+    ];
+
+    filterSelectors.forEach(selector => {
+      const element = document.querySelector(selector);
+      if (element && element.tomselect) {
+        element.tomselect.on('change', function(value) {
+          console.log(`${selector} changed to:`, value);
+          fetchData();
+        });
+      }
+    });
+
     function openModal(modalId){
       const modal = document.getElementById(modalId);
       modal.classList.add('active');
@@ -505,11 +1562,25 @@ $(function(){
     ].some(sel => $(sel).val());
     }
 
-    function statusBadge(status){
-      if(!status) return '<span class="badge">-</span>';
-      const safe = String(status).replace(/\s/g,'\\ ');
-      return `<span class="badge badge-animated ${safe}">${status}</span>`;
-    }
+   function statusBadge(status, overdue){
+  let s = (status || '').trim();
+  if (!s) s = 'Pending';
+
+  // Check if status is in a closed state
+  const sLower = s.toLowerCase();
+  const closedStates = ['completed', 'done', 'cancelled', 'expired'];
+  const isClosed = closedStates.includes(sLower);
+
+  // If overdue and status is still open, display Expired in UI
+  if (overdue && !isClosed) {
+    s = 'Expired';
+  }
+
+  const cls = (s === 'Expired') ? 'badge-expired' : '';
+  const safe = String(s).replace(/\s/g,'\\ ');
+  return `<span class="badge badge-animated ${safe} ${cls}">${s}</span>`;
+}
+
 
     function fmt(d){
       if (!d) return '-';
@@ -529,36 +1600,55 @@ $(function(){
       const yy = String(dt.getFullYear()).slice(-2);
       return `${dd}/${mm}/${yy}`;
     }
+    window.fmt = fmt;
 
-   function rowHtml(r){
 
+
+
+function rowHtml(r){
+  // Check if task is overdue
+  const sLower = String(r.status || '').toLowerCase();
+  const closedStates = ['completed', 'done', 'cancelled'];
+  const isClosed = closedStates.includes(sLower);
+  const overdue = isOverdue(r.deadline) && !isClosed;
 
   const btnDelete = r.can_delete
     ? `<button type="button" class="btn btn-danger btnDelete magnetic" data-id="${r.id}">
          <span class="btn-content">Delete</span>
        </button>`
+    : '<span style="color: var(--muted);">-</span>';
+
+  // Build row with inline styles for overdue
+  const rowStyle = overdue
+    ? 'style="background-color: #fef2f2 !important;"'
     : '';
 
-  return `
-    <tr data-id="${r.id}" data-can-update="${r.can_update ? '1':'0'}" class="table-row-animated">
-      <td><span class="cell-content">${fmt(r.date_in)}</span></td>
-      <td><span class="cell-content">${fmt(r.deadline)}</span></td>
-      <td><span class="cell-content">${r.assign_by_id ?? '-'}</span></td>
-      <td><span class="cell-content">${r.assign_to_id ?? '-'}</span></td>
-      <td><span class="cell-content">${r.type_label ?? '-'}</span></td>
-      <td><span class="cell-content">${r.company_name ?? r.company_id ?? '-'}</span></td>
-      <td><span class="cell-content">${r.task ?? r.task_name ?? r.task_id ?? '-'}</span></td>
-      <td><span class="cell-content">${r.pic_name ?? '-'}</span></td>
-      <td><span class="cell-content">${r.product_name ?? r.product_id ?? '-'}</span></td>
-      <td>${statusBadge(r.status)}</td>
-      <td class="truncate max-w-200" title="${(r.remarks||'').replace(/"/g,'&quot;')}"><span class="cell-content">${r.remarks ?? ''}</span></td>
-      <td style="display:flex; gap:.5rem;">
-        ${btnDelete}
-      </td>
-    </tr>
-  `;
-}
+  const cellStyle = overdue
+    ? 'style="background-color: #fef2f2 !important; color: #7f1d1d !important; font-weight: 600 !important;"'
+    : '';
 
+return `
+  <tr data-id="${r.id}"
+      data-can-update="${r.can_update ? '1' : '0'}"
+      class="${silentRefresh ? '' : 'table-row-animated'} ${overdue ? 'row-overdue' : ''}"
+      ${rowStyle}>
+    <td ${cellStyle}>${fmt(r.date_in)}</td>
+    <td ${cellStyle}>${fmt(r.deadline)}</td>
+    <td ${cellStyle}>${r.assign_by_id ?? '-'}</td>
+    <td ${cellStyle}>${r.assign_to_id ?? '-'}</td>
+    <td ${cellStyle}>${r.company_name ?? r.company_id ?? '-'}</td>
+    <td ${cellStyle}>${r.pic_name ?? '-'}</td>
+    <td ${cellStyle}>${r.product_name ?? r.product_id ?? '-'}</td>
+    <td ${cellStyle}>${r.task ?? r.task_name ?? r.task_id ?? '-'}</td>
+    <td ${cellStyle} class="truncate max-w-200" title="${(r.remarks||'').replace(/"/g,'&quot;')}">${r.remarks ?? '-'}</td>
+    <td ${cellStyle}>${uiTypeLabel(r.type_label)}</td>
+    <td ${cellStyle}>${statusBadge(r.status, overdue)}</td>
+    <td ${cellStyle}>${btnDelete}</td>
+  </tr>
+`;
+
+
+}
 function openEditModal(id){
   fetch(`{{ route('dashboard.items.editPayload', ['id' => '__ID__']) }}`.replace('__ID__', id), {
     headers: { 'X-CSRF-TOKEN': CSRF }
@@ -635,6 +1725,7 @@ function openEditModal(id){
 
       if(allData.length === 0){
         tbody.append(`<tr><td colspan="12" style="padding:3rem 2rem; text-align:center; color:var(--muted);">No data</td></tr>`);
+        updateTableCounter(0);
         return;
       }
 
@@ -655,36 +1746,57 @@ function openEditModal(id){
           this.style.transform = 'translate(0, 0)';
         });
       });
+      updateTableCounter(slice.length);
     }
 
     function rotate(){
       if(hasAnyFilter() || allData.length <= WINDOW_SIZE) return;
       windowStart = (windowStart + WINDOW_SIZE) % allData.length;
       renderWindow();
+
     }
 
-    function getFilters(){
-    return {
-        date_in_from:  $('#f_date_in_from').val() || '',
-        assign_by_id:  $('#f_assign_by_id').val() || '',
-        assign_to_id:  $('#f_assign_to_id').val() || '',
-        type_label:    $('#f_type_label').val() || '',
-        company_id:    $('#f_company_id').val() || '',
-        pic_name:      $('#f_pic_name').val() || '',
-        product_id:    $('#f_product_id').val() || '',
-        status:        $('#f_status').val() || '',
-        q:             ($('#f_q').val() || '').trim(),
-    };
-    }
+    function sortNewestFirst(arr){
+  const key = r => (
+    r.created_at ? new Date(r.created_at).getTime()
+    : r.updated_at ? new Date(r.updated_at).getTime()
+    : (parseInt(r.id, 10) || 0)
+  );
+  arr.sort((a, b) => key(b) - key(a)); // newest first
+}
 
-    function fetchData({resetWindow=true} = {}){
+function getFilters(){
+  return {
+    date_in_from:  $('#f_date_in_from').val() || '',
+    assign_by_id:  $('#f_assign_by_id').val() || '',
+    assign_to_id:  $('#f_assign_to_id').val() || '',
+    type_label:    $('#f_type_label').val() || '',
+    company_id:    $('#f_company_id').val() || '',
+    pic_name:      $('#f_pic_name').val() || '',
+    product_id:    $('#f_product_id').val() || '',
+    status:        $('#f_status').val() || '',
+    q:             ($('#f_q').val() || '').trim(),
+  };
+}
+// expose ke global, supaya dipakai oleh kode Preview di atas
+window.getFilters = getFilters;
+
+
+    function fetchData({resetWindow=true, silent=false} = {}){
+        silentRefresh = !!silent;
       const params = new URLSearchParams(getFilters()).toString();
       return fetch(`{{ route('dashboard.items.list') }}?` + params, {
         headers: { 'X-CSRF-TOKEN': CSRF }
       })
         .then(r => r.json())
         .then(j => {
-          allData = j.data || [];
+  // Filter out completed items from main table
+  const rawData = j.data || [];
+  allData = rawData.filter(item => {
+    const status = (item.status || '').toLowerCase();
+    return status !== 'completed';
+  });
+  sortNewestFirst(allData);
           if(resetWindow) windowStart = 0;
           renderWindow();
           if(calendar){
@@ -696,12 +1808,12 @@ function openEditModal(id){
 
     function startRotation(){
       if(rotateTimer) clearInterval(rotateTimer);
-      rotateTimer = setInterval(rotate, 5000);
+      rotateTimer = setInterval(rotate, 8000);
     }
 
     function startAutoRefresh(){
       if(refreshTimer) clearInterval(refreshTimer);
-      refreshTimer = setInterval(()=>fetchData({resetWindow:false}), 30000);
+      refreshTimer = setInterval(()=>fetchData({resetWindow:false, silent:true}), 3000);
     }
 
     // CREATE MODAL EVENTS
@@ -892,7 +2004,7 @@ function openEditModal(id){
             </div>
             <div class="detail-item">
               <div class="detail-label">Type</div>
-              <div class="detail-value">${d.type_label ?? '-'}</div>
+              <div class="detail-value">${uiTypeLabel(d.type_label)}</div>
             </div>
             <div class="detail-item">
               <div class="detail-label">Company</div>
@@ -966,38 +2078,113 @@ function openEditModal(id){
     await fetchData();
     });
 
-    function initCalendar(){
-      const el = document.getElementById('calendar');
-      calendar = new FullCalendar.Calendar(el, {
-        initialView: 'dayGridMonth',
-        height: 'auto',
-        eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
-        events: (info, success, failure) => {
-          const params = new URLSearchParams(getFilters()).toString();
-          fetch(`{{ route('dashboard.items.events') }}?` + params, { headers:{ 'X-CSRF-TOKEN': CSRF }})
-            .then(r=>r.json())
-            .then(data=>success(data))
-            .catch(err=>failure(err));
-        },
-        eventClick: function(info){
-          const id = info.event.id;
-          if(id) openDetail(id);
-        }
-      });
-      calendar.render();
-      window.calendar = calendar;
-    }
+   function isOverdue(deadline){
+  if (!deadline) return false;
 
-    (async function boot(){
-      initCalendar();
-      await fetchData();
-      startRotation();
-      startAutoRefresh();
-    })();
+  // Handle both ISO strings and Date objects
+  let d = (deadline instanceof Date) ? new Date(deadline) : new Date(String(deadline));
+  if (Number.isNaN(d.getTime())) {
+    const m = String(deadline).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) d = new Date(`${m[1]}-${m[2]}-${m[3]}T00:00:00`);
+  }
+  if (Number.isNaN(d.getTime())) return false;
+
+  // Set to end of day (23:59:59.999)
+  d.setHours(23, 59, 59, 999);
+  return d.getTime() < Date.now();
+}
+
+ function initCalendar(){
+  const el = document.getElementById('calendar');
+  if (!el) return;
+
+  calendar = new FullCalendar.Calendar(el, {
+    initialView: 'dayGridMonth',
+    height: 'auto',
+    eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+
+    // Fetch events from server
+    events: (info, success, failure) => {
+      const params = new URLSearchParams(getFilters()).toString();
+      fetch(`{{ route('dashboard.items.events') }}?` + params, {
+        headers: { 'X-CSRF-TOKEN': CSRF }
+      })
+        .then(r => r.json())
+        .then(data => success(data))
+        .catch(err => failure(err));
+    },
+
+    // Map status to CSS classes for color coding
+   eventClassNames: function(arg){
+  const s = (arg.event.extendedProps.status || '').toLowerCase();
+  const end = arg.event.end || arg.event.start;
+
+  // Check if event is overdue
+  const closedStates = ['completed', 'done', 'cancelled'];
+  const isClosed = closedStates.includes(s);
+  const over = end ? (new Date(end) < new Date()) : false;
+
+  // If overdue and not closed, show as expired
+  if (over && !isClosed) {
+    return ['ev-status-expired'];
+  }
+
+  // Standard status colors
+  if (s === 'expired')     return ['ev-status-expired'];
+  if (s === 'completed')   return ['ev-status-completed'];
+  if (s === 'in progress') return ['ev-status-in-progress'];
+  if (s === 'pending')     return ['ev-status-pending'];
+  return [];
+},
+
+
+    // PLAN B: Direct inline styling (bypasses CSS entirely)
+    eventDidMount: function(info){
+      const s = (info.event.extendedProps.status || '').toLowerCase();
+      const el = info.el;
+
+      if (s === 'expired'){
+        el.style.backgroundColor = '#fee2e2';
+        el.style.borderColor = '#fca5a5';
+        el.style.color = '#991b1b';
+      } else if (s === 'completed'){
+        el.style.backgroundColor = '#dcfce7';
+        el.style.borderColor = '#86efac';
+        el.style.color = '#14532d';
+      } else if (s === 'in progress'){
+        el.style.backgroundColor = '#fef9c3';
+        el.style.borderColor = '#fde68a';
+        el.style.color = '#713f12';
+      } else if (s === 'pending'){
+        el.style.backgroundColor = '#e0f2fe';
+        el.style.borderColor = '#bae6fd';
+        el.style.color = '#0c4a6e';
+      }
+    },
+
+    // Handle event clicks
+    eventClick: function(info){
+      const id = info.event.id;
+      if (id) openDetail(id);
+    }
+  });
+
+  calendar.render();
+  window.calendar = calendar;
+}
+
+// BOOT SEQUENCE - Initialize everything on page load
+initCalendar();
+fetchData().then(() => {
+  startRotation();
+  startAutoRefresh();
+}).catch(err => {
+  console.error('Boot error:', err);
+});
 
   } catch (e) {
-    console.error('Boot error:', e);
+    console.error('Main error:', e);
   }
-});
+}); // End of $(function(){...})
 </script>
 @endsection

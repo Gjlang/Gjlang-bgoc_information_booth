@@ -952,8 +952,8 @@ table thead {
     }
 }
 /* ============================================
-   ENHANCED TABLE SECTION
-   ============================================ */
+    ENHANCED TABLE SECTION
+    ============================================ */
 
 .table-section {
     border-bottom: 1px solid rgba(229, 231, 235, 0.3);
@@ -1429,6 +1429,148 @@ table thead {
 }
 
 /* ============================================
+   FORCE PERFECT HEADER-DATA ALIGNMENT
+   ============================================ */
+
+/* Reset ALL padding to be exactly same */
+.data-table thead th,
+.data-table tbody td {
+    padding: 1rem 0.5rem !important;
+    box-sizing: border-box !important;
+}
+
+/* Remove ALL transforms that cause shift */
+.data-table tbody tr:hover {
+    transform: none !important;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15) !important;
+    background: rgba(102, 126, 234, 0.03) !important;
+}
+
+/* Remove cell-content wrapper effects */
+.cell-content {
+    display: block !important;
+    transform: none !important;
+}
+
+.data-table tbody tr:hover .cell-content {
+    transform: none !important;
+}
+
+/* Remove the pseudo-element that adds spacing */
+.data-table tbody td:first-child .cell-content::before {
+    display: none !important;
+}
+
+.data-table tbody tr::before {
+    display: none !important;
+}
+
+/* Force exact same width for header and body columns */
+.data-table colgroup col:nth-child(1) {
+    width: 95px !important;
+}
+.data-table colgroup col:nth-child(2) {
+    width: 95px !important;
+}
+.data-table colgroup col:nth-child(3) {
+    width: 110px !important;
+}
+.data-table colgroup col:nth-child(4) {
+    width: 110px !important;
+}
+.data-table colgroup col:nth-child(5) {
+    width: 140px !important;
+}
+.data-table colgroup col:nth-child(6) {
+    width: 130px !important;
+}
+.data-table colgroup col:nth-child(7) {
+    width: 160px !important;
+}
+.data-table colgroup col:nth-child(8) {
+    width: 85px !important;
+}
+.data-table colgroup col:nth-child(9) {
+    width: 110px !important;
+}
+.data-table colgroup col:nth-child(10) {
+    width: 130px !important;
+}
+.data-table colgroup col:nth-child(11) {
+    width: 180px !important;
+}
+.data-table colgroup col:nth-child(12) {
+    width: 100px !important;
+}
+
+/* Two-line table header label */
+.th-2line {
+    display: inline-flex;
+    flex-direction: column;
+    line-height: 1.05;
+    align-items: center; /* biar teks center */
+    gap: 2px;
+}
+.th-2line .top {
+    font-weight: 700; /* ASSIGN */
+    letter-spacing: 0.03em;
+}
+.th-2line .sub {
+    font-size: 0.85em; /* BY / TO */
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+/* (opsional) lebar minimal agar tidak kependekan */
+.data-table thead th:nth-child(3),
+.data-table thead th:nth-child(4) {
+    min-width: 90px; /* sesuaikan bila perlu */
+}
+
+/* === Compact columns: Internal/Client (col 10) & Action (col 12) === */
+.data-table {
+    table-layout: fixed;
+} /* biar width kita kepake konsisten */
+
+/* Header cells */
+.data-table thead th:nth-child(10),
+.data-table thead th:nth-child(12) {
+    width: 110px; /* boleh tweak: 90–120px */
+    max-width: 120px;
+    text-align: center;
+    white-space: nowrap;
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+/* Body cells */
+.data-table tbody td:nth-child(10),
+.data-table tbody td:nth-child(12) {
+    width: 110px;
+    max-width: 120px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* jaga-jaga kalau ada teks panjang */
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+/* khusus tombol Action biar center */
+.data-table tbody td:nth-child(12) .btn {
+    width: 100%;
+    max-width: 90px; /* tombol tetap ramping */
+    justify-content: center;
+    display: inline-flex;
+}
+
+/* opsional: kecilkan padding baris expired biar makin hemat */
+.data-table tbody tr.row-overdue td {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+/* ============================================
    STATUS BADGES - ANIMATED
    ============================================ */
 
@@ -1488,6 +1630,14 @@ table thead {
     background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
     border-color: #6ee7b7;
     color: #065f46;
+}
+
+.badge.Expired,
+.badge-expired {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%) !important;
+    border-color: #fca5a5 !important;
+    color: #991b1b !important;
+    font-weight: 700 !important;
 }
 
 .badge.Hold,
@@ -2616,6 +2766,45 @@ table thead {
     }
 }
 
+/* Expired - Red */
+.fc .ev-status-expired .fc-event-main,
+.fc .ev-status-expired {
+    background: #fee2e2;
+    border-color: #fca5a5;
+    color: #991b1b;
+}
+
+/* Completed - Green */
+.fc .ev-status-completed .fc-event-main,
+.fc .ev-status-completed {
+    background: #dcfce7;
+    border-color: #86efac;
+    color: #14532d;
+}
+
+/* In Progress - Yellow */
+.fc .ev-status-in-progress .fc-event-main,
+.fc .ev-status-in-progress {
+    background: #fef9c3;
+    border-color: #fde68a;
+    color: #713f12;
+}
+
+/* Pending - Blue */
+.fc .ev-status-pending .fc-event-main,
+.fc .ev-status-pending {
+    background: #e0f2fe;
+    border-color: #bae6fd;
+    color: #0c4a6e;
+}
+
+/* Event dots in list/timeline views */
+.fc .ev-status-expired .fc-daygrid-event-dot,
+.fc .ev-status-completed .fc-daygrid-event-dot,
+.fc .ev-status-in-progress .fc-daygrid-event-dot,
+.fc .ev-status-pending .fc-daygrid-event-dot {
+    border-color: currentColor;
+}
 /* ============================================
    DARK MODE SUPPORT (Optional)
    ============================================ */
@@ -2681,6 +2870,57 @@ table thead {
     body {
         background: white;
     }
+}
+
+/* ============================================
+   OVERDUE ROW STYLING - CRITICAL OVERRIDE
+   ============================================ */
+
+/* Base overdue row - highest specificity */
+.data-table tbody tr.row-overdue {
+    background: #fef2f2 !important;
+    border-bottom: 1px solid #fca5a5 !important;
+}
+
+/* Force background on every cell */
+.data-table tbody tr.row-overdue td {
+    background: #fef2f2 !important;
+    color: #7f1d1d !important;
+    font-weight: 600 !important;
+}
+
+/* Override even/odd stripe pattern */
+.data-table tbody tr.row-overdue:nth-child(even) {
+    background: #fef2f2 !important;
+}
+
+.data-table tbody tr.row-overdue:nth-child(even) td {
+    background: #fef2f2 !important;
+}
+
+/* Override hover effects for overdue rows */
+.data-table tbody tr.row-overdue:hover {
+    background: #fee2e2 !important;
+    transform: translateX(4px) scale(1.01) !important;
+    box-shadow: -6px 0 0 #ef4444, 0 4px 12px rgba(239, 68, 68, 0.3) !important;
+}
+
+.data-table tbody tr.row-overdue:hover td {
+    background: #fee2e2 !important;
+    color: #7f1d1d !important;
+}
+
+/* Remove gradient overlay on overdue rows */
+.data-table tbody tr.row-overdue::before {
+    display: none !important;
+}
+
+/* Ensure expired badge styling */
+.data-table tbody tr.row-overdue .badge-expired {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%) !important;
+    border-color: #fca5a5 !important;
+    color: #991b1b !important;
+    font-weight: 700 !important;
 }
 
 /* ============================================

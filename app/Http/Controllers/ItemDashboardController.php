@@ -10,6 +10,9 @@ use App\Exports\ItemsExport;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Artisan;
+
+use Illuminate\Support\Facades\Cache;
 
 class ItemDashboardController extends Controller
 {
@@ -31,25 +34,50 @@ class ItemDashboardController extends Controller
     }
 
     /** Base query - NO MORE JOINS since company_id and product_id are now strings */
-    protected function baseQuery(array $filters)
-    {
-        $q = Item::query()->select('items.*');
 
-        if (!empty($filters['date_in_from']))  $q->whereDate('items.date_in', '>=', $filters['date_in_from']);
-        if (!empty($filters['date_in_to']))    $q->whereDate('items.date_in', '<=', $filters['date_in_to']);
-        if (!empty($filters['deadline_from'])) $q->whereDate('items.deadline','>=', $filters['deadline_from']);
-        if (!empty($filters['deadline_to']))   $q->whereDate('items.deadline','<=', $filters['deadline_to']);
 
-        foreach (['assign_by_id','assign_to_id','type_label','company_id','pic_name','product_id','status'] as $f) {
-            if (!empty($filters[$f])) {
-                $f === 'pic_name'
-                    ? $q->where("items.$f", 'like', '%'.$filters[$f].'%')
-                    : $q->where("items.$f", $filters[$f]);
-            }
-        }
+protected function baseQuery(array $filters)
+{
+    $q = Item::query()->select('items.*');
 
-        return $q;
+    if (!empty($filters['date_in_from']))  $q->whereDate('items.date_in', '>=', $filters['date_in_from']);
+    if (!empty($filters['date_in_to']))    $q->whereDate('items.date_in', '<=', $filters['date_in_to']);
+    if (!empty($filters['deadline_from'])) $q->whereDate('items.deadline','>=', $filters['deadline_from']);
+    if (!empty($filters['deadline_to']))   $q->whereDate('items.deadline','<=', $filters['deadline_to']);
+
+    // 🔴 Special handling for virtual "Expired"
+    if (!empty($filters['status']) && strcasecmp($filters['status'], 'Expired') === 0) {
+        $q->where(function ($qq) {
+            $qq->whereDate('items.deadline', '<', now()->toDateString())
+               ->whereNotIn('items.status', ['Completed','Done','Cancelled','Expired'])
+               ->orWhere('items.status', 'Expired'); // real expired if someone set it
+        });
+        unset($filters['status']); // prevent the default equality filter below
     }
+
+    foreach (['assign_by_id','assign_to_id','type_label','company_id','pic_name','product_id','status'] as $f) {
+        if (!empty($filters[$f])) {
+            $f === 'pic_name'
+                ? $q->where("items.$f", 'like', '%'.$filters[$f].'%')
+                : $q->where("items.$f", $filters[$f]);
+        }
+    }
+
+    // ✅ Expose a UI status that matches your frontend logic
+    $q->addSelect(DB::raw("
+        CASE
+          WHEN items.deadline IS NOT NULL
+           AND DATE(items.deadline) < CURDATE()
+           AND items.status NOT IN ('Completed','Done','Cancelled','Expired')
+          THEN 'Expired'
+          ELSE items.status
+        END AS status_ui
+    "));
+
+    return $q;
+}
+
+
 
   public function index(Request $request)
 {
@@ -148,8 +176,9 @@ class ItemDashboardController extends Controller
                     'company_id'   => $i->company_id,
                     'pic_name'     => $i->pic_name,
                     'product_id'   => $i->product_id,
-                    'status'       => $i->status,
+                    'status' => $i->status_ui ?? $i->status,
                     'remarks'      => $i->remarks,
+                    'task'         => $i->task,
 
                     'can_update'   => $user?->can('update', $i) ?? false,
                     'can_delete'   => $user?->can('delete', $i) ?? false,
@@ -162,28 +191,41 @@ class ItemDashboardController extends Controller
         }
     }
 
-    public function export(Request $request)
-    {
-        // Authorization: admin only
-        $this->authorize('export', Item::class);
+ public function export(Request $request)
+{
+    $this->authorize('export', Item::class);
 
-        try {
-            $filters = method_exists($this, 'cleanFilters')
-                ? $this->cleanFilters($request)
-                : $request->only([
-                    'date_in_from','assign_by_id','type_label','company_id',
-                    'pic_name','product_id','status',
-                ]);
+    try {
+        $filters = method_exists($this, 'cleanFilters')
+            ? $this->cleanFilters($request)
+            : $request->only([
+                'date_in_from',
+                'deadline_from',
+                'assign_by_id',
+                'assign_to_id',
+                'company_id',
+                'pic_name',
+                'product_id',
+                'task',
+                'remarks',
+                'type_label',
+                'status',
+            ]);
 
-            $filename = 'items_export_' . now()->format('Ymd_His') . '.xlsx';
+        $filename = 'Info_Hub_Status_' . now()->format('Ymd_His') . '.xlsx';
 
-            return Excel::download(new ItemsExport($filters), $filename);
-        } catch (\Throwable $e) {
-            report($e);
-            return response()->json(['ok' => false, 'error' => $e->getMessage()], 500);
-        }
+        // ✅ SOLUSI: Download langsung tanpa temp file
+        return Excel::download(
+            new ItemsExport($filters),
+            $filename,
+            \Maatwebsite\Excel\Excel::XLSX
+        );
+
+    } catch (\Throwable $e) {
+        report($e);
+        return response()->json(['ok' => false, 'error' => $e->getMessage()], 500);
     }
-
+}
     public function store(Request $request)
     {
         $this->authorize('create', Item::class);
@@ -328,11 +370,13 @@ class ItemDashboardController extends Controller
                     $row->task         ?? '-',
                     $row->company_id   ?? '-',
                     $row->status       ?? '-',
+
                 ];
                 return [
                     'id'     => $row->id,
                     'title'  => implode(' | ', array_filter($titleParts, fn($v) => $v !== null && $v !== '' && $v !== '-')),
                     'start'  => $row->deadline,
+                    'status' => $row->status_ui ?? $row->status,
                     'allDay' => true,
                 ];
             })->values();

@@ -16,7 +16,8 @@
     }
 }
 
-.bg-gradient-animated {
+/* Scoped to login page only to avoid conflicts */
+.page-login .login-gradient {
     background: linear-gradient(
         -45deg,
         #4bbbed,
@@ -24,13 +25,14 @@
         #1a4d7a,
         #4bbbed,
         #22255b
-    );
-    background-size: 400% 400%;
-    animation: gradientShift 15s ease infinite;
+    ) !important;
+    background-size: 400% 400% !important;
+    animation: gradientShift 15s ease infinite !important;
+    opacity: 1 !important;
 }
 
 /* ===== MESH GRADIENT OVERLAY ===== */
-.gradient-mesh {
+.page-login .gradient-mesh {
     position: absolute;
     inset: 0;
     background: radial-gradient(
@@ -48,8 +50,9 @@
             rgba(75, 187, 237, 0.2) 0%,
             transparent 50%
         );
-    opacity: 0.8;
+    opacity: 0.5 !important;
     animation: meshPulse 8s ease-in-out infinite;
+    filter: none !important;
 }
 
 @keyframes meshPulse {
@@ -140,7 +143,7 @@
 }
 
 /* ===== ANIMATED WAVES ===== */
-.wave-container {
+.page-login .wave-container {
     position: absolute;
     bottom: 0;
     left: 0;
@@ -149,13 +152,13 @@
     overflow: hidden;
 }
 
-.wave {
+.page-login .wave {
     position: absolute;
     bottom: 0;
     left: 0;
     width: 200%;
     height: 100%;
-    fill: rgba(255, 255, 255, 0.1);
+    fill: rgba(255, 255, 255, 0.08);
 }
 
 .wave-1 {
@@ -194,15 +197,15 @@
 }
 
 /* ===== GLASS MORPHISM CARD ===== */
-.glass-card {
+.page-login .glass-card {
     position: relative;
     width: 100%;
     max-width: 460px;
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.15) !important;
     backdrop-filter: blur(20px);
     border-radius: 30px;
     padding: 3rem 2.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1),
         0 2px 8px rgba(255, 255, 255, 0.1) inset;
 }
@@ -678,7 +681,7 @@
 
 /* ===== RESPONSIVE DESIGN ===== */
 @media (max-width: 640px) {
-    .glass-card {
+    .page-login .glass-card {
         padding: 2rem 1.5rem;
         border-radius: 20px;
     }
@@ -806,7 +809,7 @@
         background: white;
     }
 
-    .glass-card {
+    .page-login .glass-card {
         background: white;
         border: 1px solid #ccc;
     }
@@ -842,7 +845,7 @@
 }
 
 /* ===== GLOW ON HOVER ===== */
-.glass-card:hover {
+.page-login .glass-card:hover {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2),
         0 2px 8px rgba(255, 255, 255, 0.2) inset,
         0 0 40px rgba(75, 187, 237, 0.3);

@@ -6,6 +6,8 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'App\\Exports\\ItemsExport' => $baseDir . '/app/Exports/ItemsExport.php',
+    'App\\Http\\Controllers\\AdminUserController' => $baseDir . '/app/Http/Controllers/AdminUserController.php',
     'App\\Http\\Controllers\\Auth\\AuthenticatedSessionController' => $baseDir . '/app/Http/Controllers/Auth/AuthenticatedSessionController.php',
     'App\\Http\\Controllers\\Auth\\ConfirmablePasswordController' => $baseDir . '/app/Http/Controllers/Auth/ConfirmablePasswordController.php',
     'App\\Http\\Controllers\\Auth\\EmailVerificationNotificationController' => $baseDir . '/app/Http/Controllers/Auth/EmailVerificationNotificationController.php',
@@ -28,6 +30,7 @@ return array(
     'App\\Models\\Product' => $baseDir . '/app/Models/Product.php',
     'App\\Models\\StatusHistory' => $baseDir . '/app/Models/StatusHistory.php',
     'App\\Models\\User' => $baseDir . '/app/Models/User.php',
+    'App\\Policies\\ItemPolicy' => $baseDir . '/app/Policies/ItemPolicy.php',
     'App\\Providers\\AppServiceProvider' => $baseDir . '/app/Providers/AppServiceProvider.php',
     'App\\View\\Components\\AppLayout' => $baseDir . '/app/View/Components/AppLayout.php',
     'App\\View\\Components\\GuestLayout' => $baseDir . '/app/View/Components/GuestLayout.php',
